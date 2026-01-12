@@ -137,21 +137,21 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
                   <ArrowLeft className="h-5 w-5" />
                   <span>Back</span>
                 </button>
-                <h1 className="text-2xl font-playfair font-semibold text-black">
+                <h1 className="text-lg md:text-2xl font-playfair font-semibold text-black">
                   {currentView === 'add' ? 'Add Payment Method' : 'Edit Payment Method'}
                 </h1>
               </div>
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-2 text-sm md:text-base"
                 >
                   <X className="h-4 w-4" />
                   <span>Cancel</span>
                 </button>
                 <button
                   onClick={handleSaveMethod}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 text-sm md:text-base"
                 >
                   <Save className="h-4 w-4" />
                   <span>Save</span>
@@ -162,7 +162,7 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
         </div>
 
         <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-8">
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-black mb-2">Payment Method Name *</label>
@@ -268,11 +268,11 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
                 <ArrowLeft className="h-5 w-5" />
                 <span>Dashboard</span>
               </button>
-              <h1 className="text-2xl font-playfair font-semibold text-black">Payment Methods</h1>
+              <h1 className="text-lg md:text-2xl font-playfair font-semibold text-black">Payment Methods</h1>
             </div>
             <button
               onClick={handleAddMethod}
-              className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+              className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm md:text-base"
             >
               <Plus className="h-4 w-4" />
               <span>Add Payment Method</span>
@@ -283,7 +283,7 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <h2 className="text-lg font-playfair font-medium text-black mb-4">Payment Methods</h2>
             
             {paymentMethods.length === 0 ? (
@@ -292,7 +292,7 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
                 <p className="text-gray-500 mb-4">No payment methods found</p>
                 <button
                   onClick={handleAddMethod}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                  className="bg-green-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm md:text-base"
                 >
                   Add First Payment Method
                 </button>

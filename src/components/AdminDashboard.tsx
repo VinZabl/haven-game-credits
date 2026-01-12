@@ -438,21 +438,21 @@ const AdminDashboard: React.FC = () => {
                   <ArrowLeft className="h-5 w-5" />
                   <span>Back</span>
                 </button>
-                <h1 className="text-2xl font-playfair font-semibold text-black">
+                <h1 className="text-lg md:text-2xl font-playfair font-semibold text-black">
                   {currentView === 'add' ? 'Add New Item' : 'Edit Item'}
                 </h1>
               </div>
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-2 text-sm md:text-base"
                 >
                   <X className="h-4 w-4" />
                   <span>Cancel</span>
                 </button>
                 <button
                   onClick={handleSaveItem}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 text-sm md:text-base"
                 >
                   <Save className="h-4 w-4" />
                   <span>Save</span>
@@ -463,14 +463,14 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-8">
             {/* Item Customization Section */}
             <div className="mb-8 border-b border-gray-200 pb-8">
               <button
                 onClick={() => toggleSection('customization')}
                 className="w-full flex items-center justify-between text-left mb-4 hover:opacity-80 transition-opacity"
               >
-                <h3 className="text-xl font-playfair font-semibold text-black">Item Customization</h3>
+                <h3 className="text-lg md:text-xl font-playfair font-semibold text-black">Item Customization</h3>
                 {collapsedSections.customization ? (
                   <ChevronDown className="h-5 w-5 text-gray-600" />
                 ) : (
@@ -558,7 +558,7 @@ const AdminDashboard: React.FC = () => {
 
             {/* Discount Pricing Section */}
                   <div>
-                    <h4 className="text-lg font-playfair font-medium text-black mb-4">Discount (Percentage)</h4>
+                    <h4 className="text-base md:text-lg font-playfair font-medium text-black mb-4">Discount (Percentage)</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                         <label className="block text-sm font-medium text-black mb-2">Discount Percentage (%)</label>
@@ -633,7 +633,7 @@ const AdminDashboard: React.FC = () => {
                   className="flex-1 flex items-center justify-between text-left hover:opacity-80 transition-opacity"
                 >
                   <div className="flex-1">
-                    <h3 className="text-xl font-playfair font-semibold text-black">In-Game Currency Packages</h3>
+                    <h3 className="text-lg md:text-xl font-playfair font-semibold text-black">In-Game Currency Packages</h3>
                     <p className="text-sm text-gray-500 mt-1">Add currency packages that will be shown when customers click on this item</p>
                   </div>
                   {collapsedSections.packages ? (
@@ -1004,7 +1004,7 @@ const AdminDashboard: React.FC = () => {
                   className="flex-1 flex items-center justify-between text-left hover:opacity-80 transition-opacity"
                 >
                   <div className="flex-1">
-                    <h3 className="text-xl font-playfair font-semibold text-black">Customer Information Fields</h3>
+                    <h3 className="text-lg md:text-xl font-playfair font-semibold text-black">Customer Information Fields</h3>
                     <p className="text-sm text-gray-500 mt-1">Define custom fields that will appear in the customer information section during checkout for this game</p>
                   </div>
                   {collapsedSections.customFields ? (
@@ -1091,17 +1091,17 @@ const AdminDashboard: React.FC = () => {
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
           <div 
-            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl" 
+            className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 shadow-xl" 
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Category</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">Delete Category</h3>
             <p className="text-sm text-gray-600 mb-6">
               Are you sure you want to delete this category? All packages in this category will be moved to "Unnamed Category".
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setCategoryToDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors duration-200"
+                className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors duration-200"
               >
                 Cancel
               </button>
@@ -1135,7 +1135,7 @@ const AdminDashboard: React.FC = () => {
                     setCategoryToDelete(null);
                   }
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors duration-200"
+                className="px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors duration-200"
               >
                 Delete Category
               </button>
@@ -1162,17 +1162,17 @@ const AdminDashboard: React.FC = () => {
                   <ArrowLeft className="h-5 w-5" />
                   <span>Dashboard</span>
                 </button>
-                <h1 className="text-2xl font-playfair font-semibold text-black">Menu Items</h1>
+                <h1 className="text-lg md:text-2xl font-playfair font-semibold text-black">Manage Game Items</h1>
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 md:space-x-3">
                 {showBulkActions && (
-                  <div className="flex items-center space-x-2">
+                  <div className="hidden md:flex items-center space-x-2">
                     <span className="text-sm text-gray-600">
                       {selectedItems.length} item(s) selected
                     </span>
                     <button
                       onClick={() => setShowBulkActions(!showBulkActions)}
-                      className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                      className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm md:text-base"
                     >
                       <span>Bulk Actions</span>
                     </button>
@@ -1180,30 +1180,39 @@ const AdminDashboard: React.FC = () => {
                 )}
                 <button
                   onClick={handleAddItem}
-                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                  className="flex items-center space-x-1 md:space-x-2 bg-green-600 text-white px-2 py-1.5 md:px-3 md:py-1.5 lg:px-4 lg:py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 text-xs md:text-sm lg:text-base"
                 >
-                  <Plus className="h-4 w-4" />
-                  <span>Add New Item</span>
+                  <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Add New Item</span>
+                  <span className="sm:hidden">Add</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
           {/* Bulk Actions Panel */}
           {showBulkActions && selectedItems.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border-l-4 border-blue-500">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-white rounded-xl shadow-sm p-3 md:p-4 lg:p-6 mb-4 md:mb-6 border-l-4 border-blue-500">
+              <div className="flex flex-col gap-3 md:gap-4">
+                <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-medium text-black mb-1">Bulk Actions</h3>
-                  <p className="text-sm text-gray-600">{selectedItems.length} item(s) selected</p>
+                    <h3 className="text-sm md:text-base lg:text-lg font-medium text-black">Bulk Actions</h3>
+                    <p className="text-xs md:text-sm text-gray-600">{selectedItems.length} item(s) selected</p>
+                  </div>
+                  <button
+                    onClick={() => setShowBulkActions(false)}
+                    className="md:hidden p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-2 md:gap-3">
                   {/* Change Category */}
-                  <div className="flex items-center space-x-2">
-                    <label className="text-sm font-medium text-gray-700">Change Category:</label>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">Change Category:</label>
                     <select
                       onChange={(e) => {
                         if (e.target.value) {
@@ -1211,7 +1220,7 @@ const AdminDashboard: React.FC = () => {
                           e.target.value = ''; // Reset selection
                         }
                       }}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="flex-1 px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs md:text-sm"
                       disabled={isProcessing}
                     >
                       <option value="">Select Category</option>
@@ -1221,13 +1230,14 @@ const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
                   
+                  <div className="flex flex-col sm:flex-row gap-2">
                   {/* Remove Items */}
                   <button
                     onClick={handleBulkRemove}
                     disabled={isProcessing}
-                    className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="flex-1 flex items-center justify-center space-x-2 bg-red-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm"
                   >
-                    <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                     <span>{isProcessing ? 'Removing...' : 'Remove Selected'}</span>
                   </button>
                   
@@ -1237,11 +1247,12 @@ const AdminDashboard: React.FC = () => {
                       setSelectedItems([]);
                       setShowBulkActions(false);
                     }}
-                    className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-sm"
+                      className="flex-1 flex items-center justify-center space-x-2 bg-gray-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-xs md:text-sm"
                   >
-                    <X className="h-4 w-4" />
+                      <X className="h-3 w-3 md:h-4 md:w-4" />
                     <span>Clear Selection</span>
                   </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1250,29 +1261,42 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Bulk Actions Bar */}
             {menuItems.length > 0 && (
-              <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2">
+              <div className="bg-gray-50 border-b border-gray-200 px-3 md:px-4 lg:px-6 py-2 md:py-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                  <div className="flex items-center space-x-2 md:space-x-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedItems.length === menuItems.length && menuItems.length > 0}
                         onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4 md:w-5 md:h-5"
                       />
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-xs md:text-sm font-medium text-gray-700">
                         Select All ({menuItems.length} items)
                       </span>
                     </label>
                   </div>
                   {selectedItems.length > 0 && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
+                    <div className="flex items-center justify-between sm:justify-end space-x-3">
+                      <span className="text-xs md:text-sm text-gray-600">
                         {selectedItems.length} item(s) selected
                       </span>
                       <button
+                        onClick={() => {
+                          if (!showBulkActions) {
+                            setShowBulkActions(true);
+                          } else {
+                            setSelectedItems([]);
+                            setShowBulkActions(false);
+                          }
+                        }}
+                        className="md:hidden text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                      >
+                        {showBulkActions ? 'Hide' : 'Actions'}
+                      </button>
+                      <button
                         onClick={() => setSelectedItems([])}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                        className="hidden md:block text-xs md:text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
                       >
                         Clear Selection
                       </button>
@@ -1601,16 +1625,16 @@ const AdminDashboard: React.FC = () => {
                           </button>
                         </div>
                         {!isCollapsed && items.map((item) => (
-                <div key={item.id} className={`p-4 border-b border-gray-200 last:border-b-0 ${selectedItems.includes(item.id) ? 'bg-blue-50' : ''}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="flex items-center space-x-2">
+                <div key={item.id} className={`p-3 md:p-4 border-b border-gray-200 last:border-b-0 ${selectedItems.includes(item.id) ? 'bg-blue-50 border-blue-200' : ''}`}>
+                  <div className="flex items-center justify-between mb-2 md:mb-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
                         onChange={() => handleSelectItem(item.id)}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4 md:w-5 md:h-5"
                       />
-                      <span className="text-sm text-gray-600">Select</span>
+                      <span className="text-xs md:text-sm text-gray-600">Select</span>
                     </label>
                     <div className="flex items-center space-x-2">
                       <button
@@ -1630,7 +1654,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                             <div className="flex items-center gap-2 mb-2">
-                              <label className="text-sm text-gray-600">Sort:</label>
+                              <label className="text-xs md:text-sm text-gray-600">Sort:</label>
                               <input
                                 type="number"
                                 min="0"
@@ -1639,17 +1663,17 @@ const AdminDashboard: React.FC = () => {
                                   const newSortOrder = parseInt(e.target.value) || 0;
                                   await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
                                 }}
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                className="w-16 md:w-20 px-2 py-1 border border-gray-300 rounded text-xs md:text-sm"
                               />
                   </div>
                   
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2 md:mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                      <h3 className="text-sm md:text-base font-medium text-gray-900 truncate">{item.name}</h3>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-2 md:gap-4 text-xs md:text-sm">
                     <div>
                       <span className="text-gray-500">Category:</span>
                       <span className="ml-1 text-gray-900">
@@ -1802,10 +1826,10 @@ const AdminDashboard: React.FC = () => {
                         {item.available ? 'Available' : 'Unavailable'}
                       </span>
                     </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  </div>
+                </div>
+              ))}
+            </div>
                       );
                     })()}
                   </div>
@@ -1843,7 +1867,7 @@ const AdminDashboard: React.FC = () => {
                   <ArrowLeft className="h-5 w-5" />
                   <span>Dashboard</span>
                 </button>
-                <h1 className="text-2xl font-playfair font-semibold text-black">Site Settings</h1>
+                <h1 className="text-lg md:text-2xl font-playfair font-semibold text-black">Site Settings</h1>
               </div>
             </div>
           </div>
@@ -1863,7 +1887,7 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-noto font-semibold text-black">Admin</h1>
+              <h1 className="text-lg md:text-2xl font-noto font-semibold text-black">Admin</h1>
             </div>
             <div className="flex items-center space-x-4">
               <a
@@ -1937,48 +1961,48 @@ const AdminDashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <div className="space-y-3">
               <button
                 onClick={handleAddItem}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center space-x-3 p-2 md:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <FilePlus className="h-5 w-5 text-gray-400" />
-                <span className="font-medium text-gray-900">Add New Menu Item</span>
+                <FilePlus className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <span className="text-sm md:text-base font-medium text-gray-900">Add New Menu Item</span>
               </button>
               <button
                 onClick={() => setCurrentView('items')}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center space-x-3 p-2 md:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <List className="h-5 w-5 text-gray-400" />
-                <span className="font-medium text-gray-900">Manage Menu Items</span>
+                <List className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <span className="text-sm md:text-base font-medium text-gray-900">Manage Game Items</span>
               </button>
               <button
                 onClick={() => setCurrentView('categories')}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center space-x-3 p-2 md:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <FolderTree className="h-5 w-5 text-gray-400" />
-                <span className="font-medium text-gray-900">Manage Categories</span>
+                <FolderTree className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <span className="text-sm md:text-base font-medium text-gray-900">Manage Categories</span>
               </button>
               <button
                 onClick={() => setCurrentView('payments')}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center space-x-3 p-2 md:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <Wallet className="h-5 w-5 text-gray-400" />
-                <span className="font-medium text-gray-900">Payment Methods</span>
+                <Wallet className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <span className="text-sm md:text-base font-medium text-gray-900">Payment Methods</span>
               </button>
               <button
                 onClick={() => setCurrentView('settings')}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center space-x-3 p-2 md:p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <Cog className="h-5 w-5 text-gray-400" />
-                <span className="font-medium text-gray-900">Site Settings</span>
+                <Cog className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <span className="text-sm md:text-base font-medium text-gray-900">Site Settings</span>
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-playfair font-medium text-black mb-4">Categories Overview</h3>
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-playfair font-medium text-black mb-4">Categories Overview</h3>
             <div className="space-y-3">
               {categoryCounts.map((category) => (
                 <div key={category.id} className="flex items-center justify-between">

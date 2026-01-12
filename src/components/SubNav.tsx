@@ -7,9 +7,10 @@ interface SubNavProps {
   onCategoryClick: (categoryId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  hasPopularItems: boolean;
 }
 
-const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, searchQuery, onSearchChange }) => {
+const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, searchQuery, onSearchChange, hasPopularItems }) => {
   const { categories, loading } = useCategories();
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
 
@@ -74,17 +75,19 @@ const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, sear
                 >
                   All
                 </button>
-                <button
-                  onClick={() => onCategoryClick('popular')}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-all duration-200 border flex-shrink-0 whitespace-nowrap ${
-                    selectedCategory === 'popular'
-                      ? 'text-white border-transparent'
-                      : 'bg-transparent text-cafe-text border-cafe-primary/30 hover:border-cafe-primary hover:bg-white/50'
-                  }`}
-                  style={selectedCategory === 'popular' ? { backgroundColor: '#1E7ACB' } : {}}
-                >
-                  Popular
-                </button>
+                {hasPopularItems && (
+                  <button
+                    onClick={() => onCategoryClick('popular')}
+                    className={`px-3 py-1.5 rounded-full text-sm transition-all duration-200 border flex-shrink-0 whitespace-nowrap ${
+                      selectedCategory === 'popular'
+                        ? 'text-white border-transparent'
+                        : 'bg-transparent text-cafe-text border-cafe-primary/30 hover:border-cafe-primary hover:bg-white/50'
+                    }`}
+                    style={selectedCategory === 'popular' ? { backgroundColor: '#1E7ACB' } : {}}
+                  >
+                    Popular
+                  </button>
+                )}
                 {categories.map((c) => (
                   <button
                     key={c.id}

@@ -16,16 +16,6 @@ function MainApp() {
   const [currentView, setCurrentView] = React.useState<'menu' | 'cart' | 'checkout'>('menu');
   const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
   const [searchQuery, setSearchQuery] = React.useState<string>('');
-  
-  // Reset to 'all' if popular is somehow selected on initial load (shouldn't happen, but safety check)
-  React.useEffect(() => {
-    if (selectedCategory === 'popular' && menuItems.length > 0) {
-      const hasPopularItems = menuItems.some(item => item.popular === true);
-      if (!hasPopularItems) {
-        setSelectedCategory('all');
-      }
-    }
-  }, [menuItems, selectedCategory]);
 
   const handleViewChange = (view: 'menu' | 'cart' | 'checkout') => {
     setCurrentView(view);
@@ -51,13 +41,25 @@ function MainApp() {
     setCurrentView('cart');
   }, []);
 
+  // Check if there are any popular items
+  const hasPopularItems = React.useMemo(() => {
+    return menuItems.some(item => Boolean(item.popular) === true);
+  }, [menuItems]);
+
+  // If user is on popular category but there are no popular items, redirect to 'all'
+  React.useEffect(() => {
+    if (selectedCategory === 'popular' && !hasPopularItems && menuItems.length > 0) {
+      setSelectedCategory('all');
+    }
+  }, [hasPopularItems, selectedCategory, menuItems.length]);
+
   // Filter menu items based on selected category and search query
   const filteredMenuItems = React.useMemo(() => {
     let filtered = menuItems;
 
     // First filter by category
     if (selectedCategory === 'popular') {
-      filtered = filtered.filter(item => item.popular === true);
+      filtered = filtered.filter(item => Boolean(item.popular) === true);
     } else if (selectedCategory !== 'all') {
       filtered = filtered.filter(item => item.category === selectedCategory);
     }
@@ -86,6 +88,7 @@ function MainApp() {
           onCategoryClick={handleCategoryClick}
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
+          hasPopularItems={hasPopularItems}
         />
       )}
       

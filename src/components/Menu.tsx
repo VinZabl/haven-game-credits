@@ -33,7 +33,7 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
       // Preload images for visible category first
       let visibleItems: MenuItem[];
       if (selectedCategory === 'popular') {
-        visibleItems = menuItems.filter(item => item.popular === true);
+        visibleItems = menuItems.filter(item => Boolean(item.popular) === true);
       } else if (selectedCategory === 'all') {
         visibleItems = menuItems;
       } else {
@@ -190,12 +190,10 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
   }
 
   // If showing popular items, display them in a single section
-  // Note: Popular section ONLY appears when selectedCategory === 'popular'
-  // When viewing "All", popular items appear in their regular categories only
+  // Note: menuItems prop is already filtered by App.tsx when selectedCategory === 'popular'
   if (selectedCategory === 'popular') {
-    const popularItems = menuItems.filter(item => item.popular === true);
-    
-    if (popularItems.length === 0) {
+    // menuItems is already filtered to only popular items from App.tsx
+    if (menuItems.length === 0) {
       return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
           <section id="popular" className="mb-6 md:mb-8">
@@ -216,7 +214,7 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           </div>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-            {renderMenuItems(popularItems)}
+            {renderMenuItems(menuItems)}
           </div>
         </section>
       </main>
@@ -225,7 +223,7 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
 
   // Otherwise, display items grouped by category
   // If viewing "All", also show Popular section at the top (only when not searching)
-  const popularItems = menuItems.filter(item => item.popular === true);
+  const popularItems = menuItems.filter(item => Boolean(item.popular) === true);
   const showPopularSection = selectedCategory === 'all' && popularItems.length > 0 && searchQuery.trim() === '';
 
   return (

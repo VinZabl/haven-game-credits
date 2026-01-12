@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X, ArrowLeft, TrendingUp, Package, Users, Lock, FolderOpen, CreditCard, Settings, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, ArrowLeft, TrendingUp, Package, Users, Lock, FolderOpen, CreditCard, Settings, ArrowUpDown, ChevronDown, ChevronUp, ShoppingBag, CheckCircle, Star, Activity, FilePlus, List, FolderTree, Wallet, Cog } from 'lucide-react';
 import { MenuItem, Variation, CustomField } from '../types';
 import { useMenu } from '../hooks/useMenu';
 import { useCategories } from '../hooks/useCategories';
@@ -554,7 +554,7 @@ const AdminDashboard: React.FC = () => {
                       placeholder="Enter custom text to display below the game title (optional)"
                     />
                     <p className="text-xs text-gray-500 mt-1">This text will appear below the game title on the customer side. Leave empty to show no text.</p>
-                  </div>
+            </div>
 
             {/* Discount Pricing Section */}
                   <div>
@@ -796,8 +796,8 @@ const AdminDashboard: React.FC = () => {
                                   <div className="flex-1 min-w-0">
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Category Name</label>
                                     <div className="flex items-center gap-2">
-                                      <input
-                                        type="text"
+                  <input
+                    type="text"
                                         value={displayCategoryName}
                                         onChange={(e) => {
                                           // Don't allow editing "Unnamed Category"
@@ -1075,9 +1075,9 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-sm text-gray-400 mt-1">Click "Add Field" to create custom customer information fields</p>
           </div>
                   )}
-                </div>
+        </div>
               )}
-            </div>
+      </div>
 
           </div>
         </div>
@@ -1282,24 +1282,69 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Desktop Table View */}
+            {/* Desktop Table View - Grouped by Category */}
             <div className="hidden md:block overflow-x-auto">
+              {(() => {
+                // Group menu items by category
+                const groupedByCategory = categories.reduce((acc, category) => {
+                  const categoryItems = menuItems
+                    .filter(item => item.category === category.id)
+                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                  if (categoryItems.length > 0) {
+                    acc[category.id] = {
+                      category,
+                      items: categoryItems
+                    };
+                  }
+                  return acc;
+                }, {} as Record<string, { category: typeof categories[0], items: MenuItem[] }>);
+
+                // Items without category
+                const uncategorizedItems = menuItems
+                  .filter(item => !categories.find(cat => cat.id === item.category))
+                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+                return (
+                  <div className="space-y-6">
+                    {/* Grouped by Category */}
+                    {Object.values(groupedByCategory).map(({ category, items }) => {
+                      const isCollapsed = collapsedCategories[category.id] || false;
+                      return (
+                      <div key={category.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div 
+                          className="bg-gray-100 px-6 py-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => setCollapsedCategories(prev => ({ ...prev, [category.id]: !prev[category.id] }))}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCollapsedCategories(prev => ({ ...prev, [category.id]: !prev[category.id] }));
+                            }}
+                            className="p-1 hover:bg-gray-300 rounded transition-colors"
+                          >
+                            {isCollapsed ? (
+                              <ChevronDown className="h-5 w-5 text-gray-600" />
+                            ) : (
+                              <ChevronUp className="h-5 w-5 text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                        {!isCollapsed && (
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
-                      Select
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Category</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Price</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Currency Packages</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Actions</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Select</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Sort</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Name</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Price</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Currency Packages</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Status</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {menuItems.map((item) => (
+                            {items.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <input
@@ -1310,12 +1355,140 @@ const AdminDashboard: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.sort_order || 0}
+                                    onChange={async (e) => {
+                                      const newSortOrder = parseInt(e.target.value) || 0;
+                                      await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
+                                    }}
+                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                </td>
+                                <td className="px-6 py-4">
                           <div className="font-medium text-gray-900">{item.name}</div>
+                                </td>
+                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                  <div className="flex flex-col">
+                                    {item.isOnDiscount && item.discountPrice ? (
+                                      <>
+                                        <span className="text-red-600 font-semibold">₱{item.discountPrice}</span>
+                                        <span className="text-gray-500 line-through text-xs">₱{item.basePrice}</span>
+                                      </>
+                                    ) : (
+                                      <span>₱{item.basePrice}</span>
+                                    )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {categories.find(cat => cat.id === item.category)?.name}
+                                  {item.variations?.length || 0} package{item.variations?.length !== 1 ? 's' : ''}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col space-y-1">
+                                    {item.popular && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-600 text-white">
+                                        Popular
+                                      </span>
+                                    )}
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      item.available 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {item.available ? 'Available' : 'Unavailable'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      onClick={() => handleEditItem(item)}
+                                      disabled={isProcessing}
+                                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteItem(item.id)}
+                                      disabled={isProcessing}
+                                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        )}
+                      </div>
+                      );
+                    })}
+                    
+                    {/* Un categorized Items */}
+                    {uncategorizedItems.length > 0 && (() => {
+                      const isCollapsed = collapsedCategories['__uncategorized__'] || false;
+                      return (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div 
+                          className="bg-gray-100 px-6 py-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => setCollapsedCategories(prev => ({ ...prev, '__uncategorized__': !prev['__uncategorized__'] }))}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900">Uncategorized</h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCollapsedCategories(prev => ({ ...prev, '__uncategorized__': !prev['__uncategorized__'] }));
+                            }}
+                            className="p-1 hover:bg-gray-300 rounded transition-colors"
+                          >
+                            {isCollapsed ? (
+                              <ChevronDown className="h-5 w-5 text-gray-600" />
+                            ) : (
+                              <ChevronUp className="h-5 w-5 text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                        {!isCollapsed && (
+                        <table className="w-full">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Select</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Sort</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Name</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Price</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Currency Packages</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Status</th>
+                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {uncategorizedItems.map((item) => (
+                              <tr key={item.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedItems.includes(item.id)}
+                                    onChange={() => handleSelectItem(item.id)}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                </td>
+                                <td className="px-6 py-4">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.sort_order || 0}
+                                    onChange={async (e) => {
+                                      const newSortOrder = parseInt(e.target.value) || 0;
+                                      await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
+                                    }}
+                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="font-medium text-gray-900">{item.name}</div>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         <div className="flex flex-col">
@@ -1330,7 +1503,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {item.variations?.length || 0} package{item.variations?.length !== 1 ? 's' : ''}
+                                  {item.variations?.length || 0} package{item.variations?.length !== 1 ? 's' : ''}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col space-y-1">
@@ -1370,11 +1543,64 @@ const AdminDashboard: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+                        )}
+                      </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Mobile Card View */}
+            {/* Mobile Card View - Grouped by Category */}
             <div className="md:hidden">
-              {menuItems.map((item) => (
+              {(() => {
+                // Group menu items by category
+                const groupedByCategory = categories.reduce((acc, category) => {
+                  const categoryItems = menuItems
+                    .filter(item => item.category === category.id)
+                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                  if (categoryItems.length > 0) {
+                    acc[category.id] = {
+                      category,
+                      items: categoryItems
+                    };
+                  }
+                  return acc;
+                }, {} as Record<string, { category: typeof categories[0], items: MenuItem[] }>);
+
+                // Items without category
+                const uncategorizedItems = menuItems
+                  .filter(item => !categories.find(cat => cat.id === item.category))
+                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+                return (
+                  <div className="space-y-4">
+                    {/* Grouped by Category */}
+                    {Object.values(groupedByCategory).map(({ category, items }) => {
+                      const isCollapsed = collapsedCategories[category.id] || false;
+                      return (
+                      <div key={category.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div 
+                          className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => setCollapsedCategories(prev => ({ ...prev, [category.id]: !prev[category.id] }))}
+                        >
+                          <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCollapsedCategories(prev => ({ ...prev, [category.id]: !prev[category.id] }));
+                            }}
+                            className="p-1 hover:bg-gray-300 rounded transition-colors"
+                          >
+                            {isCollapsed ? (
+                              <ChevronDown className="h-4 w-4 text-gray-600" />
+                            ) : (
+                              <ChevronUp className="h-4 w-4 text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                        {!isCollapsed && items.map((item) => (
                 <div key={item.id} className={`p-4 border-b border-gray-200 last:border-b-0 ${selectedItems.includes(item.id) ? 'bg-blue-50' : ''}`}>
                   <div className="flex items-center justify-between mb-3">
                     <label className="flex items-center space-x-2">
@@ -1402,6 +1628,19 @@ const AdminDashboard: React.FC = () => {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
+                  </div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <label className="text-sm text-gray-600">Sort:</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.sort_order || 0}
+                                onChange={async (e) => {
+                                  const newSortOrder = parseInt(e.target.value) || 0;
+                                  await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
+                                }}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
                   </div>
                   
                   <div className="flex items-start justify-between mb-3">
@@ -1434,7 +1673,7 @@ const AdminDashboard: React.FC = () => {
                       <span className="text-gray-500">Currency Packages:</span>
                       <span className="ml-1 text-gray-900">{item.variations?.length || 0}</span>
                     </div>
-                  </div>
+                    </div>
                   
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center space-x-2">
@@ -1450,10 +1689,128 @@ const AdminDashboard: React.FC = () => {
                       }`}>
                         {item.available ? 'Available' : 'Unavailable'}
                       </span>
-                    </div>
+                  </div>
                   </div>
                 </div>
               ))}
+                      </div>
+                      );
+                    })}
+                    
+                    {/* Uncategorized Items */}
+                    {uncategorizedItems.length > 0 && (() => {
+                      const isCollapsed = collapsedCategories['__uncategorized__'] || false;
+                      return (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div 
+                          className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => setCollapsedCategories(prev => ({ ...prev, '__uncategorized__': !prev['__uncategorized__'] }))}
+                        >
+                          <h3 className="text-base font-semibold text-gray-900">Uncategorized</h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCollapsedCategories(prev => ({ ...prev, '__uncategorized__': !prev['__uncategorized__'] }));
+                            }}
+                            className="p-1 hover:bg-gray-300 rounded transition-colors"
+                          >
+                            {isCollapsed ? (
+                              <ChevronDown className="h-4 w-4 text-gray-600" />
+                            ) : (
+                              <ChevronUp className="h-4 w-4 text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                        {!isCollapsed && uncategorizedItems.map((item) => (
+                          <div key={item.id} className={`p-4 border-b border-gray-200 last:border-b-0 ${selectedItems.includes(item.id) ? 'bg-blue-50' : ''}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItems.includes(item.id)}
+                                  onChange={() => handleSelectItem(item.id)}
+                                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                                />
+                                <span className="text-sm text-gray-600">Select</span>
+                              </label>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleEditItem(item)}
+                                  disabled={isProcessing}
+                                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  disabled={isProcessing}
+                                  className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <label className="text-sm text-gray-600">Sort:</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.sort_order || 0}
+                                onChange={async (e) => {
+                                  const newSortOrder = parseInt(e.target.value) || 0;
+                                  await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
+                                }}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            </div>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Price:</span>
+                                <span className="ml-1 font-medium text-gray-900">
+                                  {item.isOnDiscount && item.discountPrice ? (
+                                    <>
+                                      <span className="text-red-600">₱{item.discountPrice}</span>
+                                      <span className="text-gray-500 line-through text-xs ml-1">₱{item.basePrice}</span>
+                                    </>
+                                  ) : (
+                                    `₱${item.basePrice}`
+                                  )}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Currency Packages:</span>
+                                <span className="ml-1 text-gray-900">{item.variations?.length || 0}</span>
+                              </div>
+                            </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center space-x-2">
+                      {item.popular && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-600 text-white">
+                          Popular
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1528,51 +1885,51 @@ const AdminDashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-600 rounded-lg">
-                <Package className="h-6 w-6 text-white" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="mb-2 md:mb-0">
+                <ShoppingBag className="h-6 w-6 md:h-8 md:w-8 text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Items</p>
-                <p className="text-2xl font-semibold text-gray-900">{totalItems}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Available Items</p>
-                <p className="text-2xl font-semibold text-gray-900">{availableItems}</p>
+              <div className="md:ml-4">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Total Items</p>
+                <p className="text-xl md:text-2xl font-semibold text-gray-900">{totalItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-cream-500 rounded-lg">
-                <Package className="h-6 w-6 text-white" />
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="mb-2 md:mb-0">
+                <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-emerald-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Popular Items</p>
-                <p className="text-2xl font-semibold text-gray-900">{popularItems}</p>
+              <div className="md:ml-4">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Available Items</p>
+                <p className="text-xl md:text-2xl font-semibold text-gray-900">{availableItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="mb-2 md:mb-0">
+                <Star className="h-6 w-6 md:h-8 md:w-8 text-amber-500" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-semibold text-gray-900">Online</p>
+              <div className="md:ml-4">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Popular Items</p>
+                <p className="text-xl md:text-2xl font-semibold text-gray-900">{popularItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="mb-2 md:mb-0">
+                <Activity className="h-6 w-6 md:h-8 md:w-8 text-indigo-600" />
+              </div>
+              <div className="md:ml-4">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Active</p>
+                <p className="text-xl md:text-2xl font-semibold text-gray-900">Online</p>
               </div>
             </div>
           </div>
@@ -1581,41 +1938,40 @@ const AdminDashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-playfair font-medium text-black mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button
                 onClick={handleAddItem}
                 className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <Plus className="h-5 w-5 text-gray-400" />
+                <FilePlus className="h-5 w-5 text-gray-400" />
                 <span className="font-medium text-gray-900">Add New Menu Item</span>
               </button>
               <button
                 onClick={() => setCurrentView('items')}
                 className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <Package className="h-5 w-5 text-gray-400" />
+                <List className="h-5 w-5 text-gray-400" />
                 <span className="font-medium text-gray-900">Manage Menu Items</span>
               </button>
               <button
                 onClick={() => setCurrentView('categories')}
                 className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <FolderOpen className="h-5 w-5 text-gray-400" />
+                <FolderTree className="h-5 w-5 text-gray-400" />
                 <span className="font-medium text-gray-900">Manage Categories</span>
               </button>
               <button
                 onClick={() => setCurrentView('payments')}
                 className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <CreditCard className="h-5 w-5 text-gray-400" />
+                <Wallet className="h-5 w-5 text-gray-400" />
                 <span className="font-medium text-gray-900">Payment Methods</span>
               </button>
               <button
                 onClick={() => setCurrentView('settings')}
                 className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <Settings className="h-5 w-5 text-gray-400" />
+                <Cog className="h-5 w-5 text-gray-400" />
                 <span className="font-medium text-gray-900">Site Settings</span>
               </button>
             </div>

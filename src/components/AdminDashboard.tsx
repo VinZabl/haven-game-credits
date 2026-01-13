@@ -752,16 +752,22 @@ const AdminDashboard: React.FC = () => {
                             const originalCategory = categoryData.originalCategory;
                             const isUnnamed = categoryData.isUnnamed;
                             // Display name: check if this is unnamed category, temporary empty category, or if original is empty
+                            // Get the actual category name from the first variation (most up-to-date)
+                            const actualCategoryName = categoryVariations[0]?.category;
                             let displayCategoryName = '';
                             let isReadOnly = false;
                             if (isUnnamed || category === '__unnamed_category__') {
-                              // This is the unnamed category, show "Unnamed Category" and make it read-only
-                              displayCategoryName = 'Unnamed Category';
-                              isReadOnly = true;
+                              // This is the unnamed category, show the actual category name if it exists, otherwise "Unnamed Category"
+                              displayCategoryName = (actualCategoryName && actualCategoryName.trim() !== '' && !actualCategoryName.startsWith('__temp_empty_') && !actualCategoryName.startsWith('__empty_')) 
+                                ? actualCategoryName 
+                                : 'Unnamed Category';
+                              isReadOnly = false; // Allow editing unnamed category
                             } else if (category.startsWith('__temp_empty_') || category.startsWith('__empty_')) {
                               // This is an empty category, show empty string (but category won't vanish)
                               displayCategoryName = '';
-                            } else if (originalCategory && originalCategory.trim() !== '') {
+                            } else if (actualCategoryName && actualCategoryName.trim() !== '' && !actualCategoryName.startsWith('__temp_empty_') && !actualCategoryName.startsWith('__empty_')) {
+                              displayCategoryName = actualCategoryName;
+                            } else if (originalCategory && originalCategory.trim() !== '' && !originalCategory.startsWith('__temp_empty_') && !originalCategory.startsWith('__empty_')) {
                               displayCategoryName = originalCategory;
                             } else {
                               displayCategoryName = category;
@@ -800,7 +806,7 @@ const AdminDashboard: React.FC = () => {
                     type="text"
                                         value={displayCategoryName}
                                         onChange={(e) => {
-                                          // Don't allow editing "Unnamed Category"
+                                          // Allow editing all categories including "Unnamed Category"
                                           if (isReadOnly) {
                                             return;
                                           }
@@ -813,16 +819,17 @@ const AdminDashboard: React.FC = () => {
                                           const updatedVariations = formData.variations!.map(v => {
                                             // Check if this variation belongs to this category group
                                             if (categoryVariationIds.has(v.id)) {
-                                              // If empty, use a unique identifier based on first variation ID to keep this group separate
-                                              // Otherwise, set to the new name (trimmed)
+                                              // If empty (after trimming), use a unique identifier based on first variation ID to keep this group separate
+                                              // Otherwise, set to the new name (preserve all spaces including leading/trailing)
                                               if (newCategoryName.trim() === '') {
                                                 // Use the first variation ID as a temporary category identifier
                                                 // This ensures the category doesn't vanish - it will be grouped by this temp ID
                                                 const tempCategoryId = `__temp_empty_${categoryVariations[0]?.id || 'default'}__`;
                                                 return { ...v, category: tempCategoryId };
                                               } else {
-                                                // If user types a name, remove the temp identifier and set the actual name
-                                                return { ...v, category: newCategoryName.trim() };
+                                                // If user types a name, preserve all spaces (including leading/trailing)
+                                                // Only trim when checking if empty, but preserve the actual value
+                                                return { ...v, category: newCategoryName };
                                               }
                                             }
                                             return v;

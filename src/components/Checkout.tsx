@@ -26,6 +26,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack }) =>
   const [copied, setCopied] = useState(false);
   const [hasCopiedMessage, setHasCopiedMessage] = useState(false);
   const [copiedAccountNumber, setCopiedAccountNumber] = useState(false);
+  const [copiedAccountName, setCopiedAccountName] = useState(false);
   const [bulkInputValues, setBulkInputValues] = useState<Record<string, string>>({});
   const [bulkSelectedGames, setBulkSelectedGames] = useState<string[]>([]);
 
@@ -318,6 +319,16 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
       setTimeout(() => setCopiedAccountNumber(false), 2000);
     } catch (error) {
       console.error('Failed to copy account number:', error);
+    }
+  };
+
+  const handleCopyAccountName = async (accountName: string) => {
+    try {
+      await navigator.clipboard.writeText(accountName);
+      setCopiedAccountName(true);
+      setTimeout(() => setCopiedAccountName(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy account name:', error);
     }
   };
 
@@ -663,9 +674,22 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
                   <p className="text-lg font-semibold text-cafe-text">{selectedPaymentMethod.name}</p>
                 </div>
                 
-                {/* Account Name */}
+                {/* Account Name with Copy Button */}
                 <div>
-                  <p className="text-sm text-cafe-textMuted mb-1">Account Name:</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-cafe-textMuted">Account Name:</p>
+                    <button
+                      onClick={() => handleCopyAccountName(selectedPaymentMethod.account_name)}
+                      className="px-3 py-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 flex-shrink-0 text-sm font-medium"
+                      title="Copy account name"
+                    >
+                      {copiedAccountName ? (
+                        <span className="text-green-400">Copied!</span>
+                      ) : (
+                        <span className="text-cafe-text">Copy</span>
+                      )}
+                    </button>
+                  </div>
                   <p className="text-cafe-text font-medium">{selectedPaymentMethod.account_name}</p>
                 </div>
                 

@@ -36,6 +36,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
   const [copiedAccountName, setCopiedAccountName] = useState(false);
   const [bulkInputValues, setBulkInputValues] = useState<Record<string, string>>({});
   const [bulkSelectedGames, setBulkSelectedGames] = useState<string[]>([]);
+  const [useMultipleAccounts, setUseMultipleAccounts] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -69,6 +70,56 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
 
   const hasAnyCustomFields = itemsWithCustomFields.length > 0;
 
+  // Detect if there are multiple different packages (variations) for the same game
+  const hasMultiplePackagesForSameGame = useMemo(() => {
+    // Group cart items by original menu item ID
+    const itemsByGame = new Map<string, CartItem[]>();
+    cartItems.forEach(item => {
+      const originalId = getOriginalMenuItemId(item.id);
+      if (!itemsByGame.has(originalId)) {
+        itemsByGame.set(originalId, []);
+      }
+      itemsByGame.get(originalId)!.push(item);
+    });
+
+    // Check if any game has multiple different variations
+    for (const [gameId, items] of itemsByGame.entries()) {
+      const variations = new Set<string>();
+      items.forEach(item => {
+        if (item.selectedVariation) {
+          variations.add(item.selectedVariation.id);
+        }
+      });
+      // If a game has 2 or more different variations, enable multiple accounts option
+      if (variations.size >= 2) {
+        return true;
+      }
+    }
+    return false;
+  }, [cartItems]);
+
+  // Group cart items by game and variation for multiple accounts mode
+  const itemsByGameAndVariation = useMemo(() => {
+    if (!useMultipleAccounts) return null;
+
+    const grouped = new Map<string, Map<string, CartItem[]>>();
+    cartItems.forEach(item => {
+      const originalId = getOriginalMenuItemId(item.id);
+      const variationId = item.selectedVariation?.id || 'default';
+      
+      if (!grouped.has(originalId)) {
+        grouped.set(originalId, new Map());
+      }
+      const variationsMap = grouped.get(originalId)!;
+      if (!variationsMap.has(variationId)) {
+        variationsMap.set(variationId, []);
+      }
+      variationsMap.get(variationId)!.push(item);
+    });
+
+    return grouped;
+  }, [cartItems, useMultipleAccounts]);
+
   // Check for existing order on mount (after itemsWithCustomFields and hasAnyCustomFields are defined)
   useEffect(() => {
     const checkExistingOrder = async () => {
@@ -83,28 +134,77 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           // Load customer information from rejected order into form fields
           if (order.status === 'rejected' && order.customer_info) {
             const loadedValues: Record<string, string> = {};
-            Object.entries(order.customer_info).forEach(([key, value]) => {
-              // Skip payment method as it's not editable
-              if (key !== 'Payment Method') {
-                // Try to match with custom fields
-                if (hasAnyCustomFields) {
-                  itemsWithCustomFields.forEach((item) => {
-                    const originalId = getOriginalMenuItemId(item.id);
-                    item.customFields?.forEach(field => {
-                      if (field.label === key) {
-                        const valueKey = `${originalId}_${field.key}`;
-                        loadedValues[valueKey] = value as string;
+            
+            // Check if this is a multiple accounts order
+            if (order.customer_info['Multiple Accounts']) {
+              // Enable multiple accounts mode
+              setUseMultipleAccounts(true);
+              
+              // Load multiple accounts data
+              const accounts = order.customer_info['Multiple Accounts'] as Array<{
+                game: string;
+                package: string;
+                fields: Record<string, string>;
+              }>;
+              
+              accounts.forEach((account) => {
+                // Find the matching game and variation
+                const matchingItem = cartItems.find(item => {
+                  const originalId = getOriginalMenuItemId(item.id);
+                  const gameMatch = item.name === account.game;
+                  const packageMatch = item.selectedVariation?.name === account.package;
+                  return gameMatch && packageMatch;
+                });
+                
+                if (matchingItem) {
+                  const originalId = getOriginalMenuItemId(matchingItem.id);
+                  const variationId = matchingItem.selectedVariation?.id || 'default';
+                  
+                  if (hasAnyCustomFields && matchingItem.customFields) {
+                    matchingItem.customFields.forEach(field => {
+                      const fieldValue = account.fields[field.label];
+                      if (fieldValue) {
+                        const valueKey = `${originalId}_${variationId}_${field.key}`;
+                        loadedValues[valueKey] = fieldValue;
                       }
                     });
-                  });
-                } else {
-                  // Default IGN field
-                  if (key === 'IGN') {
-                    loadedValues['default_ign'] = value as string;
+                  } else {
+                    // Default IGN field
+                    const ignValue = account.fields['IGN'];
+                    if (ignValue) {
+                      const valueKey = `default_${originalId}_${variationId}_ign`;
+                      loadedValues[valueKey] = ignValue;
+                    }
                   }
                 }
-              }
-            });
+              });
+            } else {
+              // Single account mode
+              setUseMultipleAccounts(false);
+              Object.entries(order.customer_info).forEach(([key, value]) => {
+                // Skip payment method as it's not editable
+                if (key !== 'Payment Method') {
+                  // Try to match with custom fields
+                  if (hasAnyCustomFields) {
+                    itemsWithCustomFields.forEach((item) => {
+                      const originalId = getOriginalMenuItemId(item.id);
+                      item.customFields?.forEach(field => {
+                        if (field.label === key) {
+                          const valueKey = `${originalId}_${field.key}`;
+                          loadedValues[valueKey] = value as string;
+                        }
+                      });
+                    });
+                  } else {
+                    // Default IGN field
+                    if (key === 'IGN') {
+                      loadedValues['default_ign'] = value as string;
+                    }
+                  }
+                }
+              });
+            }
+            
             // Only update if we have values to load
             if (Object.keys(loadedValues).length > 0) {
               setCustomFieldValues(prev => ({ ...prev, ...loadedValues }));
@@ -295,7 +395,51 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
   const generateOrderMessage = (): string => {
     // Build custom fields section grouped by game
     let customFieldsSection = '';
-    if (hasAnyCustomFields) {
+    
+    if (useMultipleAccounts && itemsByGameAndVariation) {
+      // Multiple accounts mode
+      const sections: string[] = [];
+      
+      Array.from(itemsByGameAndVariation.entries()).forEach(([gameId, variationsMap]) => {
+        const firstItem = cartItems.find(item => getOriginalMenuItemId(item.id) === gameId);
+        if (!firstItem) return;
+        
+        Array.from(variationsMap.entries()).forEach(([variationId, items]) => {
+          const variation = items[0].selectedVariation;
+          const originalId = getOriginalMenuItemId(items[0].id);
+          const accountFields: Array<{ label: string, value: string }> = [];
+          
+          if (hasAnyCustomFields && firstItem.customFields) {
+            firstItem.customFields.forEach(field => {
+              const valueKey = `${originalId}_${variationId}_${field.key}`;
+              const value = customFieldValues[valueKey];
+              if (value) {
+                accountFields.push({ label: field.label, value });
+              }
+            });
+          } else {
+            // Default IGN field
+            const valueKey = `default_${gameId}_${variationId}_ign`;
+            const value = customFieldValues[valueKey];
+            if (value) {
+              accountFields.push({ label: 'IGN', value });
+            }
+          }
+          
+          if (accountFields.length > 0) {
+            sections.push(`${firstItem.name} (${variation?.name || 'Default'})`);
+            accountFields.forEach(field => {
+              sections.push(`  ${field.label}: ${field.value}`);
+            });
+          }
+        });
+      });
+      
+      if (sections.length > 0) {
+        customFieldsSection = sections.join('\n');
+      }
+    } else if (hasAnyCustomFields) {
+      // Single account mode with custom fields
       // Group games by their field values (to simplify when bulk input is used)
       const gamesByFieldValues = new Map<string, { games: string[], fields: Array<{ label: string, value: string }> }>();
       
@@ -347,6 +491,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
         customFieldsSection = sections.join('\n');
       }
     } else {
+      // Single account mode with default IGN
       customFieldsSection = `🎮 IGN: ${customFieldValues['default_ign'] || ''}`;
     }
 
@@ -509,29 +654,79 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
 
     try {
       // Build customer info object
-      const customerInfo: Record<string, string> = {};
+      const customerInfo: Record<string, string | any> = {};
       
       // Add payment method
       if (selectedPaymentMethod) {
         customerInfo['Payment Method'] = selectedPaymentMethod.name;
       }
 
-      // Add custom fields
-      if (hasAnyCustomFields) {
-        itemsWithCustomFields.forEach((item) => {
-          const originalId = getOriginalMenuItemId(item.id);
-          item.customFields?.forEach(field => {
-            const valueKey = `${originalId}_${field.key}`;
-            const value = customFieldValues[valueKey];
-            if (value) {
-              customerInfo[field.label] = value;
+      // Multiple accounts mode: store account info per package
+      if (useMultipleAccounts && itemsByGameAndVariation) {
+        const accountsByPackage: Array<{
+          game: string;
+          package: string;
+          fields: Record<string, string>;
+        }> = [];
+
+        Array.from(itemsByGameAndVariation.entries()).forEach(([gameId, variationsMap]) => {
+          const firstItem = cartItems.find(item => getOriginalMenuItemId(item.id) === gameId);
+          if (!firstItem) return;
+
+          Array.from(variationsMap.entries()).forEach(([variationId, items]) => {
+            const variation = items[0].selectedVariation;
+            const originalId = getOriginalMenuItemId(items[0].id);
+            const packageFields: Record<string, string> = {};
+
+            if (hasAnyCustomFields && firstItem.customFields) {
+              firstItem.customFields.forEach(field => {
+                const valueKey = `${originalId}_${variationId}_${field.key}`;
+                const value = customFieldValues[valueKey];
+                if (value) {
+                  packageFields[field.label] = value;
+                }
+              });
+            } else {
+              // Default IGN field
+              const valueKey = `default_${gameId}_${variationId}_ign`;
+              const value = customFieldValues[valueKey];
+              if (value) {
+                packageFields['IGN'] = value;
+              }
+            }
+
+            if (Object.keys(packageFields).length > 0) {
+              accountsByPackage.push({
+                game: firstItem.name,
+                package: variation?.name || 'Default',
+                fields: packageFields,
+              });
             }
           });
         });
+
+        if (accountsByPackage.length > 0) {
+          customerInfo['Multiple Accounts'] = accountsByPackage;
+        }
       } else {
-        // Default IGN field
-        if (customFieldValues['default_ign']) {
-          customerInfo['IGN'] = customFieldValues['default_ign'];
+        // Single account mode (default)
+        // Add custom fields
+        if (hasAnyCustomFields) {
+          itemsWithCustomFields.forEach((item) => {
+            const originalId = getOriginalMenuItemId(item.id);
+            item.customFields?.forEach(field => {
+              const valueKey = `${originalId}_${field.key}`;
+              const value = customFieldValues[valueKey];
+              if (value) {
+                customerInfo[field.label] = value;
+              }
+            });
+          });
+        } else {
+          // Default IGN field
+          if (customFieldValues['default_ign']) {
+            customerInfo['IGN'] = customFieldValues['default_ign'];
+          }
         }
       }
 
@@ -563,6 +758,35 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
   };
 
   const isDetailsValid = useMemo(() => {
+    if (useMultipleAccounts && itemsByGameAndVariation) {
+      // Multiple accounts mode: validate each package separately
+      if (hasAnyCustomFields) {
+        // Check all required fields for each game and variation combination
+        return Array.from(itemsByGameAndVariation.entries()).every(([gameId, variationsMap]) => {
+          const firstItem = cartItems.find(item => getOriginalMenuItemId(item.id) === gameId);
+          if (!firstItem || !firstItem.customFields) return true;
+          
+          return Array.from(variationsMap.entries()).every(([variationId]) => {
+            const originalId = getOriginalMenuItemId(firstItem.id);
+            return firstItem.customFields!.every(field => {
+              if (!field.required) return true;
+              const valueKey = `${originalId}_${variationId}_${field.key}`;
+              return customFieldValues[valueKey]?.trim() || false;
+            });
+          });
+        });
+      } else {
+        // Default IGN field for each package
+        return Array.from(itemsByGameAndVariation.entries()).every(([gameId, variationsMap]) => {
+          return Array.from(variationsMap.entries()).every(([variationId]) => {
+            const valueKey = `default_${gameId}_${variationId}_ign`;
+            return customFieldValues[valueKey]?.trim() || false;
+          });
+        });
+      }
+    }
+    
+    // Single account mode (default)
     if (!hasAnyCustomFields) {
       // Default IGN field
       return customFieldValues['default_ign']?.trim() || false;
@@ -578,7 +802,7 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
         return customFieldValues[valueKey]?.trim() || false;
       });
     });
-  }, [hasAnyCustomFields, itemsWithCustomFields, customFieldValues]);
+  }, [hasAnyCustomFields, itemsWithCustomFields, customFieldValues, useMultipleAccounts, itemsByGameAndVariation, cartItems]);
 
   if (step === 'details') {
     return (
@@ -599,8 +823,35 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
             <h2 className="text-2xl font-medium text-cafe-text mb-6">Customer Information</h2>
             
             <form className="space-y-6">
+              {/* Multiple Accounts Toggle */}
+              {hasMultiplePackagesForSameGame && (
+                <div className="mb-4 p-4 glass-strong border border-cafe-primary/30 rounded-lg">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div>
+                      <p className="text-sm font-semibold text-cafe-text">Multiple Accounts</p>
+                      <p className="text-xs text-cafe-textMuted mt-1">
+                        You have multiple different packages for the same game. Enable this to provide separate account information for each package.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={useMultipleAccounts}
+                      onChange={(e) => {
+                        setUseMultipleAccounts(e.target.checked);
+                        // Clear custom field values when toggling to reset form
+                        if (!e.target.checked) {
+                          setCustomFieldValues({});
+                        }
+                      }}
+                      disabled={existingOrderStatus === 'pending' || existingOrderStatus === 'processing'}
+                      className="w-5 h-5 text-cafe-primary border-cafe-primary/30 rounded focus:ring-cafe-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </label>
+                </div>
+              )}
+
               {/* Show count of items with custom fields */}
-              {hasAnyCustomFields && itemsWithCustomFields.length > 0 && (
+              {hasAnyCustomFields && itemsWithCustomFields.length > 0 && !useMultipleAccounts && (
                 <div className="mb-4 p-3 glass-strong border border-cafe-primary/30 rounded-lg">
                   <p className="text-sm text-cafe-text">
                     <span className="font-semibold text-cafe-primary">{itemsWithCustomFields.length}</span> game{itemsWithCustomFields.length > 1 ? 's' : ''} require{itemsWithCustomFields.length === 1 ? 's' : ''} additional information
@@ -608,8 +859,8 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
                 </div>
               )}
 
-              {/* Bulk Input Section */}
-              {itemsWithCustomFields.length >= 2 && (
+              {/* Bulk Input Section - Only show when NOT using multiple accounts */}
+              {!useMultipleAccounts && itemsWithCustomFields.length >= 2 && (
                 <div className="mb-6 p-4 glass-strong border border-cafe-primary/30 rounded-lg">
                   <h3 className="text-lg font-semibold text-cafe-text mb-4">Bulk Input</h3>
                   <p className="text-sm text-cafe-textMuted mb-4">
@@ -660,8 +911,77 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
                 </div>
               )}
 
-              {/* Dynamic Custom Fields grouped by game */}
-              {hasAnyCustomFields ? (
+              {/* Dynamic Custom Fields - Multiple Accounts Mode */}
+              {useMultipleAccounts && itemsByGameAndVariation && hasAnyCustomFields ? (
+                Array.from(itemsByGameAndVariation.entries()).map(([gameId, variationsMap]) => {
+                  const firstItem = cartItems.find(item => getOriginalMenuItemId(item.id) === gameId);
+                  if (!firstItem) return null;
+                  
+                  return Array.from(variationsMap.entries()).map(([variationId, items]) => {
+                    const variation = items[0].selectedVariation;
+                    const originalId = getOriginalMenuItemId(items[0].id);
+                    
+                    return (
+                      <div key={`${gameId}_${variationId}`} className="space-y-4 pb-6 border-b border-cafe-primary/20 last:border-b-0 last:pb-0">
+                        <div className="mb-4 flex items-center gap-4">
+                          {/* Game Icon */}
+                          <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg">
+                            {firstItem.image ? (
+                              <img
+                                src={firstItem.image}
+                                alt={firstItem.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div className={`w-full h-full flex items-center justify-center ${firstItem.image ? 'hidden' : ''}`}>
+                              <div className="text-2xl opacity-20 text-gray-400">🎮</div>
+                            </div>
+                          </div>
+                          
+                          {/* Game Title and Package */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-cafe-text">{firstItem.name}</h3>
+                            <p className="text-sm text-cafe-textMuted">
+                              Package: {variation?.name || 'Default'}
+                            </p>
+                            <p className="text-xs text-cafe-textMuted mt-1">
+                              Please provide account information for this package
+                            </p>
+                          </div>
+                        </div>
+                        {firstItem.customFields?.map((field) => {
+                          const valueKey = `${originalId}_${variationId}_${field.key}`;
+                          return (
+                            <div key={valueKey}>
+                              <label className="block text-sm font-medium text-cafe-text mb-2">
+                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                              </label>
+                              <input
+                                type="text"
+                                value={customFieldValues[valueKey] || ''}
+                                onChange={(e) => setCustomFieldValues({
+                                  ...customFieldValues,
+                                  [valueKey]: e.target.value
+                                })}
+                                disabled={existingOrderStatus === 'pending' || existingOrderStatus === 'processing'}
+                                className={`w-full px-4 py-3 glass border border-cafe-primary/30 rounded-lg focus:ring-2 focus:ring-cafe-primary focus:border-cafe-primary transition-all duration-200 text-cafe-text placeholder-cafe-textMuted ${
+                                  existingOrderStatus === 'pending' || existingOrderStatus === 'processing' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                                placeholder={field.placeholder || field.label}
+                                required={field.required}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  });
+                }).flat().filter(Boolean)
+              ) : hasAnyCustomFields && !useMultipleAccounts ? (
                 itemsWithCustomFields.map((item) => (
                   <div key={item.id} className="space-y-4 pb-6 border-b border-cafe-primary/20 last:border-b-0 last:pb-0">
                     <div className="mb-4 flex items-center gap-4">
@@ -716,7 +1036,7 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
                     })}
                   </div>
                 ))
-              ) : (
+              ) : !useMultipleAccounts ? (
                 <div>
                   <label className="block text-sm font-medium text-cafe-text mb-2">
                     IGN <span className="text-red-500">*</span>
@@ -736,6 +1056,45 @@ Please confirm this order to proceed. Thank you for choosing AmberKin! 🎮
                     required
                   />
                 </div>
+              ) : (
+                // Multiple accounts mode but no custom fields - show default IGN for each package
+                itemsByGameAndVariation && Array.from(itemsByGameAndVariation.entries()).map(([gameId, variationsMap]) => {
+                  const firstItem = cartItems.find(item => getOriginalMenuItemId(item.id) === gameId);
+                  if (!firstItem) return null;
+                  
+                  return Array.from(variationsMap.entries()).map(([variationId, items]) => {
+                    const variation = items[0].selectedVariation;
+                    const valueKey = `default_${gameId}_${variationId}_ign`;
+                    
+                    return (
+                      <div key={`${gameId}_${variationId}`} className="space-y-4 pb-6 border-b border-cafe-primary/20 last:border-b-0 last:pb-0">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-cafe-text">{firstItem.name}</h3>
+                          <p className="text-sm text-cafe-textMuted">Package: {variation?.name || 'Default'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-cafe-text mb-2">
+                            IGN <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={customFieldValues[valueKey] || ''}
+                            onChange={(e) => setCustomFieldValues({
+                              ...customFieldValues,
+                              [valueKey]: e.target.value
+                            })}
+                            disabled={existingOrderStatus === 'pending' || existingOrderStatus === 'processing'}
+                            className={`w-full px-4 py-3 glass border border-cafe-primary/30 rounded-lg focus:ring-2 focus:ring-cafe-primary focus:border-cafe-primary transition-all duration-200 text-cafe-text placeholder-cafe-textMuted ${
+                              existingOrderStatus === 'pending' || existingOrderStatus === 'processing' ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            placeholder="In game name"
+                            required
+                          />
+                        </div>
+                      </div>
+                    );
+                  });
+                }).flat().filter(Boolean)
               )}
 
               <button

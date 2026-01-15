@@ -217,13 +217,39 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({ orderId, isOpen, on
             {/* Customer Information */}
             <div className="glass-strong rounded-lg p-4 border border-cafe-primary/30">
               <h3 className="font-medium text-cafe-text mb-4">Customer Information</h3>
-              <div className="space-y-2">
-                {Object.entries(order.customer_info).map(([key, value]) => (
-                  <p key={key} className="text-sm text-cafe-textMuted">
-                    {key}: {value}
-                  </p>
-                ))}
-              </div>
+              {order.customer_info['Multiple Accounts'] ? (
+                // Multiple accounts mode
+                <div className="space-y-4">
+                  {(order.customer_info['Multiple Accounts'] as Array<{
+                    game: string;
+                    package: string;
+                    fields: Record<string, string>;
+                  }>).map((account, accountIndex) => (
+                    <div key={accountIndex} className="pb-4 border-b border-cafe-primary/20 last:border-b-0 last:pb-0">
+                      <div className="mb-2">
+                        <p className="text-sm font-semibold text-cafe-text">{account.game}</p>
+                        <p className="text-xs text-cafe-textMuted">Package: {account.package}</p>
+                      </div>
+                      <div className="space-y-2 mt-2">
+                        {Object.entries(account.fields).map(([key, value]) => (
+                          <p key={key} className="text-sm text-cafe-textMuted">
+                            {key}: {value}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Single account mode (default)
+                <div className="space-y-2">
+                  {Object.entries(order.customer_info).map(([key, value]) => (
+                    <p key={key} className="text-sm text-cafe-textMuted">
+                      {key}: {value}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (

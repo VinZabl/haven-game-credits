@@ -304,28 +304,70 @@ const OrderManager: React.FC = () => {
               {/* Customer Information */}
               <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200">
                 <h3 className="text-sm md:text-base font-medium text-gray-900 mb-3 md:mb-4">Customer Information</h3>
-                <div className="space-y-1.5 md:space-y-2">
-                  {Object.entries(selectedOrder.customer_info)
-                    .filter(([key]) => key !== 'Payment Method')
-                    .map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between gap-2">
-                        <p className="text-xs md:text-sm text-gray-600 flex-1 min-w-0">
-                          <span className="font-medium text-gray-700">{key}:</span> <span className="break-words">{value}</span>
-                        </p>
-                        <button
-                          onClick={() => handleCopyField(key, value)}
-                          className="p-1 md:p-1.5 hover:bg-gray-200 rounded transition-colors duration-200 flex-shrink-0"
-                          title="Copy"
-                        >
-                          {copiedField === key ? (
-                            <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5 md:h-4 md:w-4 text-gray-500" />
-                          )}
-                        </button>
+                {selectedOrder.customer_info['Multiple Accounts'] ? (
+                  // Multiple accounts mode
+                  <div className="space-y-4">
+                    {(selectedOrder.customer_info['Multiple Accounts'] as Array<{
+                      game: string;
+                      package: string;
+                      fields: Record<string, string>;
+                    }>).map((account, accountIndex) => (
+                      <div key={accountIndex} className="pb-4 border-b border-gray-200 last:border-b-0 last:pb-0">
+                        <div className="mb-2">
+                          <p className="text-xs md:text-sm font-semibold text-gray-900">{account.game}</p>
+                          <p className="text-xs text-gray-600">Package: {account.package}</p>
+                        </div>
+                        <div className="space-y-1.5 md:space-y-2 mt-2">
+                          {Object.entries(account.fields).map(([key, value]) => {
+                            const fieldKey = `${accountIndex}_${key}`;
+                            return (
+                              <div key={fieldKey} className="flex items-center justify-between gap-2">
+                                <p className="text-xs md:text-sm text-gray-600 flex-1 min-w-0">
+                                  <span className="font-medium text-gray-700">{key}:</span> <span className="break-words">{value}</span>
+                                </p>
+                                <button
+                                  onClick={() => handleCopyField(fieldKey, value)}
+                                  className="p-1 md:p-1.5 hover:bg-gray-200 rounded transition-colors duration-200 flex-shrink-0"
+                                  title="Copy"
+                                >
+                                  {copiedField === fieldKey ? (
+                                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5 md:h-4 md:w-4 text-gray-500" />
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))}
-                </div>
+                  </div>
+                ) : (
+                  // Single account mode (default)
+                  <div className="space-y-1.5 md:space-y-2">
+                    {Object.entries(selectedOrder.customer_info)
+                      .filter(([key]) => key !== 'Payment Method')
+                      .map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between gap-2">
+                          <p className="text-xs md:text-sm text-gray-600 flex-1 min-w-0">
+                            <span className="font-medium text-gray-700">{key}:</span> <span className="break-words">{value}</span>
+                          </p>
+                          <button
+                            onClick={() => handleCopyField(key, value)}
+                            className="p-1 md:p-1.5 hover:bg-gray-200 rounded transition-colors duration-200 flex-shrink-0"
+                            title="Copy"
+                          >
+                            {copiedField === key ? (
+                              <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5 md:h-4 md:w-4 text-gray-500" />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
 
               {/* Receipt */}

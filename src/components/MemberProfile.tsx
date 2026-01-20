@@ -161,7 +161,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-mono text-sm text-cafe-text">#{order.id.slice(0, 8)}</p>
+                          <p className="font-mono text-sm text-cafe-text">{order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}</p>
                           <p className="text-xs text-cafe-textMuted mt-1">
                             {new Date(order.created_at).toLocaleDateString()}
                           </p>
@@ -170,11 +170,6 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
                           <p className="text-sm font-semibold text-cafe-text whitespace-nowrap">
                             ₱{order.total_price.toFixed(2)}
                           </p>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${getOrderStatusClass(order)}`}
-                          >
-                            {getOrderStatus(order)}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -203,7 +198,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
             {/* Order Number, Date, and Status */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 min-w-0">
-                <p className="font-mono text-sm text-cafe-text">#{selectedOrder.id.slice(0, 8)}</p>
+                <p className="font-mono text-sm text-cafe-text">{selectedOrder.invoice_number ? `#${selectedOrder.invoice_number}` : `#${selectedOrder.id.slice(0, 8)}`}</p>
                 <p className="text-xs text-cafe-textMuted mt-1">{new Date(selectedOrder.created_at).toLocaleString()}</p>
               </div>
               <span

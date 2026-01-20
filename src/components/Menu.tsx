@@ -1,5 +1,5 @@
 import React from 'react';
-import { MenuItem, CartItem } from '../types';
+import { MenuItem, CartItem, Member } from '../types';
 import { useCategories } from '../hooks/useCategories';
 import MenuItemCard from './MenuItemCard';
 
@@ -21,7 +21,7 @@ interface MenuProps {
   selectedCategory: string;
   searchQuery?: string;
   onItemAdded?: () => void; // Callback when item is added from modal
-  currentMember?: { username: string } | null; // Current logged-in member
+  currentMember?: Member | null; // Current logged-in member
 }
 
 const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuantity, selectedCategory, searchQuery = '', onItemAdded, currentMember }) => {
@@ -208,12 +208,17 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
     }
 
     return (
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4 md:pb-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 pb-4 md:pb-6">
+        {/* Welcome back card - Mobile only */}
         {currentMember && (
-          <div className="mb-4 md:mb-6">
-            <p className="text-lg md:text-xl font-medium text-cafe-text">
-              Welcome back, {currentMember.username}!
-            </p>
+          <div className="mb-6 md:hidden flex justify-center">
+            <div className="glass-card rounded-lg px-3 py-2 inline-block">
+              <div className="flex items-center justify-center">
+                <p className="text-sm text-cafe-text">
+                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-2">{currentMember.username}</span>
+                </p>
+              </div>
+            </div>
           </div>
         )}
         <section id="popular" className="mb-6 md:mb-8">
@@ -236,13 +241,18 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4 md:pb-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 pb-4 md:pb-6">
         {/* Welcome message for logged-in members */}
+        {/* Welcome back card - Mobile only */}
         {currentMember && (
-          <div className="mb-4 md:mb-6">
-            <p className="text-lg md:text-xl font-medium text-cafe-text">
-              Welcome back, {currentMember.username}!
-            </p>
+          <div className="mb-6 md:hidden flex justify-center">
+            <div className="glass-card rounded-lg px-3 py-2 inline-block">
+              <div className="flex items-center justify-center">
+                <p className="text-sm text-cafe-text">
+                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-2">{currentMember.username}</span>
+                </p>
+              </div>
+            </div>
           </div>
         )}
         

@@ -1,15 +1,17 @@
 import React from 'react';
 import { ShoppingCart, Coins } from 'lucide-react';
 import { useSiteSettings } from '../hooks/useSiteSettings';
+import { Member } from '../types';
 
 interface HeaderProps {
   cartItemsCount: number;
   onCartClick: () => void;
   onMenuClick: () => void;
   onMemberClick?: () => void;
+  currentMember?: Member | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartItemsCount, onCartClick, onMenuClick, onMemberClick }) => {
+const Header: React.FC<HeaderProps> = ({ cartItemsCount, onCartClick, onMenuClick, onMemberClick, currentMember }) => {
   const { siteSettings } = useSiteSettings();
 
   return (
@@ -36,12 +38,24 @@ const Header: React.FC<HeaderProps> = ({ cartItemsCount, onCartClick, onMenuClic
           </button>
 
           <div className="flex items-center space-x-2">
+            {/* Welcome back text - Desktop only */}
+            {currentMember && (
+              <div className="hidden md:flex items-center gap-2 mr-2">
+                <p className="text-sm text-cafe-text">
+                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-2">{currentMember.username}</span>
+                </p>
+              </div>
+            )}
             {onMemberClick && (
               <button 
                 onClick={onMemberClick}
                 className="p-2 text-cafe-text hover:text-cafe-primary hover:bg-cafe-primary/20 rounded-full transition-all duration-200"
               >
-                <Coins className="h-6 w-6" />
+                {currentMember?.user_type === 'reseller' ? (
+                  <Coins className="h-6 w-6 text-yellow-500" />
+                ) : (
+                  <Coins className="h-6 w-6" />
+                )}
               </button>
             )}
             <button 

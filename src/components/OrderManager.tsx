@@ -26,7 +26,7 @@ const OrderManager: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('members')
-          .select('id, username, email, mobile_no')
+          .select('id, username, email, mobile_no, user_type')
           .in('id', memberIds);
 
         if (error) throw error;
@@ -227,7 +227,7 @@ const OrderManager: React.FC = () => {
                      {getTimeAgo(order.created_at)}
                    </span>
                    <h3 className="text-xs font-semibold text-gray-900">
-                     Order #{order.id.slice(0, 8)}
+                     Order {order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}
                    </h3>
                  </div>
                </div>
@@ -246,10 +246,10 @@ const OrderManager: React.FC = () => {
               {order.member_id && memberMap[order.member_id] && (
                 <div className="mb-3 pb-3 border-b border-gray-200">
                   <div className="flex items-center gap-2 text-xs">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Member:</span>
                     <span className="font-semibold text-gray-900">{memberMap[order.member_id].username}</span>
-                    <span className="text-gray-500">({memberMap[order.member_id].email})</span>
+                    <span className="text-gray-500">
+                      / {memberMap[order.member_id].user_type === 'reseller' ? 'Reseller' : 'Member'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -327,7 +327,7 @@ const OrderManager: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl p-3 md:p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b border-gray-200">
               <h2 className="text-xs font-semibold text-gray-900">
-                Order #{selectedOrder.id.slice(0, 8)}
+                Order {selectedOrder.invoice_number ? `#${selectedOrder.invoice_number}` : `#${selectedOrder.id.slice(0, 8)}`}
               </h2>
               <button
                 onClick={() => {
@@ -350,18 +350,11 @@ const OrderManager: React.FC = () => {
               {/* Member Information */}
               {selectedOrder.member_id && memberMap[selectedOrder.member_id] && (
                 <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
-                  <h3 className="text-xs font-medium text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
-                    <User className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
-                    Registered Member
-                  </h3>
                   <div className="space-y-1.5 md:space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-600">Username:</span>
-                      <span className="text-xs font-semibold text-gray-900">{memberMap[selectedOrder.member_id].username}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-600">Email:</span>
-                      <span className="text-xs text-gray-900">{memberMap[selectedOrder.member_id].email}</span>
+                      <span className="text-xs font-semibold text-gray-900">
+                        {memberMap[selectedOrder.member_id].username} / {memberMap[selectedOrder.member_id].user_type === 'reseller' ? 'Reseller' : 'Member'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-600">Mobile:</span>

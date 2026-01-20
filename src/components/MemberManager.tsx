@@ -94,7 +94,7 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
       setLoadingOrders(true);
       const { data, error } = await supabase
         .from('orders')
-        .select('id, status, total_price, payment_method_id, created_at, updated_at, order_option, order_items, customer_info')
+        .select('id, invoice_number, status, total_price, payment_method_id, created_at, updated_at, order_option, order_items, customer_info')
         .eq('member_id', memberId)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -484,7 +484,7 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                         <div key={order.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 min-w-0">
-                              <p className="font-mono text-xs text-gray-900 mb-1">#{order.id.slice(0, 8)}</p>
+                              <p className="font-mono text-xs text-gray-900 mb-1">{order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}</p>
                               <p className="text-xs text-gray-600">{new Date(order.created_at).toLocaleString()}</p>
                             </div>
                             <span
@@ -508,6 +508,35 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                                 )}
                               </div>
                             </div>
+                            {/* Customer Information */}
+                            {order.customer_info && Object.keys(order.customer_info).length > 0 && (
+                              <div className="text-xs pt-2 border-t border-gray-200">
+                                <span className="text-gray-600 font-medium">Customer Info:</span>
+                                <div className="mt-1 space-y-1 pl-4">
+                                  {Array.isArray(order.customer_info) ? (
+                                    // Multiple accounts mode
+                                    order.customer_info.map((account: any, idx: number) => (
+                                      <div key={idx} className="pl-2 border-l-2 border-gray-300">
+                                        <p className="text-gray-900 font-medium">{account.game}</p>
+                                        {account.package && <p className="text-gray-600 text-xs">Package: {account.package}</p>}
+                                        {account.fields && Object.entries(account.fields).map(([label, value]: [string, any]) => (
+                                          <p key={label} className="text-gray-600 text-xs">
+                                            <span className="font-medium">{label}:</span> {value}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    // Single account mode
+                                    Object.entries(order.customer_info).map(([label, value]) => (
+                                      <p key={label} className="text-gray-600 text-xs">
+                                        <span className="font-medium">{label}:</span> {value}
+                                      </p>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex justify-between text-xs">
                               <span className="text-gray-600">Payment:</span>
                               <span className="text-gray-900">{order.payment_method_id || 'N/A'}</span>
@@ -529,6 +558,7 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Order ID</th>
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Date</th>
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Items</th>
+                            <th className="text-left p-3 text-gray-900 font-semibold text-xs">Customer Info</th>
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Payment Method</th>
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Status</th>
                             <th className="text-left p-3 text-gray-900 font-semibold text-xs">Total Order</th>
@@ -538,7 +568,7 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                           {memberOrders.map((order) => (
                             <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50">
                               <td className="p-3 text-gray-900 font-mono text-xs">
-                                #{order.id.slice(0, 8)}
+                                {order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}
                               </td>
                               <td className="p-3 text-gray-600 text-xs">
                                 {new Date(order.created_at).toLocaleString()}
@@ -555,6 +585,38 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                                     <span>No items</span>
                                   )}
                                 </div>
+                              </td>
+                              <td className="p-3 text-gray-600 text-xs">
+                                {order.customer_info && Object.keys(order.customer_info).length > 0 ? (
+                                  <div className="space-y-1">
+                                    <p className="text-gray-600 font-medium mb-1">Customer Info:</p>
+                                    <div className="pl-4 space-y-1">
+                                      {Array.isArray(order.customer_info) ? (
+                                        // Multiple accounts mode
+                                        order.customer_info.map((account: any, idx: number) => (
+                                          <div key={idx} className="border-l-2 border-gray-300 pl-2">
+                                            <p className="font-medium text-gray-900">{account.game}</p>
+                                            {account.package && <p className="text-xs text-gray-600">Package: {account.package}</p>}
+                                            {account.fields && Object.entries(account.fields).map(([label, value]: [string, any]) => (
+                                              <p key={label} className="text-xs text-gray-600">
+                                                <span className="font-medium">{label}:</span> {value}
+                                              </p>
+                                            ))}
+                                          </div>
+                                        ))
+                                      ) : (
+                                        // Single account mode
+                                        Object.entries(order.customer_info).map(([label, value]) => (
+                                          <p key={label} className="text-xs text-gray-600">
+                                            <span className="font-medium">{label}:</span> {value}
+                                          </p>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">N/A</span>
+                                )}
                               </td>
                               <td className="p-3 text-gray-600 text-xs">
                                 {order.payment_method_id || 'N/A'}

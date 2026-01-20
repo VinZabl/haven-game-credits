@@ -229,7 +229,7 @@ const MemberDashboard: React.FC = () => {
           <>
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">All Members</h3>
+            <h3 className="text-lg md:text-xl font-bold text-gray-900">All Members</h3>
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -260,40 +260,40 @@ const MemberDashboard: React.FC = () => {
             {/* Filters Panel - Collapsible */}
             {showFilters && (
               <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex flex-wrap gap-2">
-                  <button
+            <div className="flex flex-wrap gap-2">
+              <button
                     onClick={() => {
                       setMemberFilter('all');
                       setUserTypeFilter('all');
                     }}
-                    className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
                       memberFilter === 'all' && userTypeFilter === 'all'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setMemberFilter('active')}
-                    className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                      memberFilter === 'active'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    Active
-                  </button>
-                  <button
-                    onClick={() => setMemberFilter('inactive')}
-                    className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                      memberFilter === 'inactive'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    Inactive
-                  </button>
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setMemberFilter('active')}
+                className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                  memberFilter === 'active'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setMemberFilter('inactive')}
+                className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                  memberFilter === 'inactive'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Inactive
+              </button>
                   <button
                     onClick={() => setUserTypeFilter('end_user')}
                     className={`px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
@@ -314,7 +314,7 @@ const MemberDashboard: React.FC = () => {
                   >
                     Resellers
                   </button>
-                </div>
+            </div>
               </div>
             )}
           </div>
@@ -342,19 +342,19 @@ const MemberDashboard: React.FC = () => {
                     >
                       <div className="mb-3">
                         <div className="flex items-start justify-between mb-2">
-                          <span
+                        <span
                             className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
-                              member.status === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {member.status}
-                          </span>
+                            member.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {member.status}
+                        </span>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">Orders:</span>
                             <span className="font-semibold text-gray-900">{memberOrderCounts[member.id] || 0}</span>
-                          </div>
+                      </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-gray-900 mb-1 truncate">{member.username}</h4>
@@ -540,7 +540,7 @@ const MemberDashboard: React.FC = () => {
                         <div key={order.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 min-w-0">
-                              <p className="font-mono text-sm text-gray-900 mb-1">#{order.id.slice(0, 8)}</p>
+                              <p className="font-mono text-sm text-gray-900 mb-1">{order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}</p>
                               <p className="text-xs text-gray-600">{new Date(order.created_at).toLocaleString()}</p>
                             </div>
                             <span
@@ -584,7 +584,7 @@ const MemberDashboard: React.FC = () => {
                           {memberOrders.map((order) => (
                             <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50">
                               <td className="p-3 text-gray-900 font-mono text-sm">
-                                #{order.id.slice(0, 8)}
+                                {order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}
                               </td>
                               <td className="p-3 text-gray-600 text-sm">
                                 {new Date(order.created_at).toLocaleString()}

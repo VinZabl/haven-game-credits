@@ -261,19 +261,19 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onBack }) => {
                       </span>
                       
                       <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEditCategory(category)}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      <button
+                        onClick={() => handleEditCategory(category)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                       </div>
                     </div>
                     

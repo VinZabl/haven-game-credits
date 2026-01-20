@@ -13,7 +13,7 @@ export const useOrders = () => {
       setLoading(true);
       let query = supabase
         .from('orders')
-        .select('id, status, total_price, payment_method_id, created_at, updated_at, member_id, order_option, order_items, customer_info, receipt_url')
+        .select('id, invoice_number, status, total_price, payment_method_id, created_at, updated_at, member_id, order_option, order_items, customer_info, receipt_url')
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -81,6 +81,7 @@ export const useOrders = () => {
           total_price: orderData.total_price,
           member_id: orderData.member_id || null,
           order_option: orderData.order_option || 'place_order',
+          invoice_number: orderData.invoice_number || null,
           status: 'pending',
         })
         .select()

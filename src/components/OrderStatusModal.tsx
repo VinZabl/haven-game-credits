@@ -88,7 +88,7 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({ orderId, isOpen, on
             <h2 className="text-2xl font-semibold text-cafe-text">Order Status</h2>
             {order && (
               <p className="text-sm text-cafe-textMuted mt-1">
-                Order #{order.id.slice(0, 8)}
+                Order {order.invoice_number ? `#${order.invoice_number}` : `#${order.id.slice(0, 8)}`}
               </p>
             )}
           </div>

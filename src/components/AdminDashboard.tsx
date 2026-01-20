@@ -69,7 +69,7 @@ const AdminDashboard: React.FC = () => {
       }
     };
 
-    fetchPendingOrders();
+      fetchPendingOrders();
   }, []);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -523,13 +523,13 @@ const AdminDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <label className="block text-xs font-medium text-black mb-2">Item Name (Game Name) *</label>
-                          <input
-                            type="text"
-                            value={formData.name || ''}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                <input
+                  type="text"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-xs"
-                            placeholder="Enter game name (e.g., Wild Rift, Mobile Legends)"
-                          />
+                        placeholder="Enter game name (e.g., Wild Rift, Mobile Legends)"
+                />
                         </div>
                         <div className="w-24 sm:w-32 flex-shrink-0">
                           <label className="block text-xs font-medium text-black mb-2">Sort</label>
@@ -679,8 +679,8 @@ const AdminDashboard: React.FC = () => {
                           Calculates discounted reseller price from original price
                         </p>
                 </div>
-              </div>
-                  </div>
+                </div>
+            </div>
 
                   {/* Image Upload */}
                   <div>
@@ -871,67 +871,67 @@ const AdminDashboard: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                       <div className="flex-1 min-w-0">
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Category Name</label>
-                                        <input
-                                          type="text"
-                                          value={displayCategoryName}
-                                          onChange={(e) => {
-                                            // Allow editing all categories including "Unnamed Category"
-                                            if (isReadOnly) {
-                                              return;
+                  <input
+                    type="text"
+                                        value={displayCategoryName}
+                                        onChange={(e) => {
+                                          // Allow editing all categories including "Unnamed Category"
+                                          if (isReadOnly) {
+                                            return;
+                                          }
+                                          
+                                          const newCategoryName = e.target.value;
+                                          // Find all variations in this category using the original category key
+                                          // We need to match variations that belong to this category group
+                                          const categoryVariationIds = new Set(categoryVariations.map(v => v.id));
+                                          
+                                          const updatedVariations = formData.variations!.map(v => {
+                                            // Check if this variation belongs to this category group
+                                            if (categoryVariationIds.has(v.id)) {
+                                              // If empty (after trimming), use a unique identifier based on first variation ID to keep this group separate
+                                              // Otherwise, set to the new name (preserve all spaces including leading/trailing)
+                                              if (newCategoryName.trim() === '') {
+                                                // Use the first variation ID as a temporary category identifier
+                                                // This ensures the category doesn't vanish - it will be grouped by this temp ID
+                                                const tempCategoryId = `__temp_empty_${categoryVariations[0]?.id || 'default'}__`;
+                                                return { ...v, category: tempCategoryId };
+                                              } else {
+                                                // If user types a name, preserve all spaces (including leading/trailing)
+                                                // Only trim when checking if empty, but preserve the actual value
+                                                return { ...v, category: newCategoryName };
+                                              }
                                             }
-                                            
-                                            const newCategoryName = e.target.value;
-                                            // Find all variations in this category using the original category key
-                                            // We need to match variations that belong to this category group
-                                            const categoryVariationIds = new Set(categoryVariations.map(v => v.id));
-                                            
-                                            const updatedVariations = formData.variations!.map(v => {
-                                              // Check if this variation belongs to this category group
-                                              if (categoryVariationIds.has(v.id)) {
-                                                // If empty (after trimming), use a unique identifier based on first variation ID to keep this group separate
-                                                // Otherwise, set to the new name (preserve all spaces including leading/trailing)
-                                                if (newCategoryName.trim() === '') {
-                                                  // Use the first variation ID as a temporary category identifier
-                                                  // This ensures the category doesn't vanish - it will be grouped by this temp ID
-                                                  const tempCategoryId = `__temp_empty_${categoryVariations[0]?.id || 'default'}__`;
-                                                  return { ...v, category: tempCategoryId };
-                                                } else {
-                                                  // If user types a name, preserve all spaces (including leading/trailing)
-                                                  // Only trim when checking if empty, but preserve the actual value
-                                                  return { ...v, category: newCategoryName };
-                                                }
-                                              }
-                                              return v;
-                                            });
-                                            setFormData({ ...formData, variations: updatedVariations });
-                                          }}
-                                          disabled={isReadOnly}
+                                            return v;
+                                          });
+                                          setFormData({ ...formData, variations: updatedVariations });
+                                        }}
+                                        disabled={isReadOnly}
                                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-xs font-semibold disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                          placeholder="Category name (e.g., Category 1)"
-                                        />
-                                      </div>
+                                        placeholder="Category name (e.g., Category 1)"
+                                      />
+                                    </div>
                                       <div className="w-24 sm:w-32 flex-shrink-0">
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Category Sort</label>
-                                        <input
-                                          type="number"
-                                          value={categorySort !== 999 ? categorySort : ''}
-                                          onChange={(e) => {
-                                            const value = e.target.value === '' ? 999 : parseInt(e.target.value) || 999;
-                                            // Update sort for all variations in this category using variation IDs
-                                            const categoryVariationIds = new Set(categoryVariations.map(v => v.id));
-                                            const updatedVariations = formData.variations!.map(v => {
-                                              if (categoryVariationIds.has(v.id)) {
-                                                return { ...v, sort: value !== 999 ? value : null };
-                                              }
-                                              return v;
-                                            });
-                                            setFormData({ ...formData, variations: updatedVariations });
-                                          }}
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Category Sort</label>
+                                    <input
+                                      type="number"
+                                      value={categorySort !== 999 ? categorySort : ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value === '' ? 999 : parseInt(e.target.value) || 999;
+                                        // Update sort for all variations in this category using variation IDs
+                                        const categoryVariationIds = new Set(categoryVariations.map(v => v.id));
+                                        const updatedVariations = formData.variations!.map(v => {
+                                          if (categoryVariationIds.has(v.id)) {
+                                            return { ...v, sort: value !== 999 ? value : null };
+                                          }
+                                          return v;
+                                        });
+                                        setFormData({ ...formData, variations: updatedVariations });
+                                      }}
                                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                          placeholder="Sort"
-                                          min="0"
-                                          step="1"
-                                        />
+                                      placeholder="Sort"
+                                      min="0"
+                                      step="1"
+                                    />
                                       </div>
                                       {!isReadOnly && (
                                         <button
@@ -966,7 +966,7 @@ const AdminDashboard: React.FC = () => {
                                           <input
                                             type="text"
                                             value={variation.name || ''}
-                                            onChange={(e) => updateVariation(index, 'name', e.target.value)}
+                    onChange={(e) => updateVariation(index, 'name', e.target.value)}
                                             className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-xs"
                                             placeholder="e.g., Weekly Diamond Pass"
                                           />
@@ -984,8 +984,8 @@ const AdminDashboard: React.FC = () => {
                                           {/* Price (default price for customers) */}
                                           <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">Price</label>
-                                            <input
-                                              type="number"
+                  <input
+                    type="number"
                                               value={variation.price !== undefined && variation.price !== null && variation.price !== 0 ? variation.price : ''}
                                               onChange={(e) => {
                                                 const value = e.target.value === '' ? undefined : Number(e.target.value);
@@ -1012,9 +1012,9 @@ const AdminDashboard: React.FC = () => {
                                               placeholder="0"
                                               min="0"
                                               step="0.01"
-                                            />
-                                          </div>
-                                        </div>
+                  />
+                </div>
+            </div>
 
                                         {/* Description (optional) */}
                                         <textarea
@@ -1716,15 +1716,15 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xs font-medium text-gray-900 truncate">{item.name}</h3>
                       <div className="mt-1 text-xs space-y-1">
-                        <div>
-                          <span className="text-gray-500">Category:</span>
-                          <span className="ml-1 text-gray-900">
-                            {categories.find(cat => cat.id === item.category)?.name}
-                          </span>
-                        </div>
-                        <div>
+                    <div>
+                      <span className="text-gray-500">Category:</span>
+                      <span className="ml-1 text-gray-900">
+                        {categories.find(cat => cat.id === item.category)?.name}
+                      </span>
+                    </div>
+                    <div>
                           <span className="text-gray-500">Packages:</span>
-                          <span className="ml-1 text-gray-900">{item.variations?.length || 0}</span>
+                      <span className="ml-1 text-gray-900">{item.variations?.length || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -1741,7 +1741,7 @@ const AdminDashboard: React.FC = () => {
                         className="w-16 md:w-20 px-2 py-1 border border-gray-300 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
-                  </div>
+                    </div>
                   
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center space-x-2">
@@ -1836,14 +1836,14 @@ const AdminDashboard: React.FC = () => {
                               </div>
                               <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                                 <label className="text-xs text-gray-600">Sort:</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={item.sort_order || 0}
-                                  onChange={async (e) => {
-                                    const newSortOrder = parseInt(e.target.value) || 0;
-                                    await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
-                                  }}
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.sort_order || 0}
+                                onChange={async (e) => {
+                                  const newSortOrder = parseInt(e.target.value) || 0;
+                                  await updateMenuItem(item.id, { ...item, sort_order: newSortOrder });
+                                }}
                                   className="w-20 px-2 py-1 border border-gray-300 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                               </div>
@@ -1996,7 +1996,7 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center">
               <div className="mb-2 md:mb-0">
-                <Clock className="h-6 w-6 md:h-8 md:w-8 text-emerald-600" />
+                  <Clock className="h-6 w-6 md:h-8 md:w-8 text-emerald-600" />
               </div>
               <div className="md:ml-4">
                 <p className="text-xs font-medium text-gray-600">Pending Orders</p>
@@ -2008,7 +2008,7 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center">
               <div className="mb-2 md:mb-0">
-                <Star className="h-6 w-6 md:h-8 md:w-8 text-amber-500" />
+                  <Star className="h-6 w-6 md:h-8 md:w-8 text-amber-500" />
               </div>
               <div className="md:ml-4">
                 <p className="text-xs font-medium text-gray-600">Popular Items</p>
@@ -2020,7 +2020,7 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center">
               <div className="mb-2 md:mb-0">
-                <Activity className="h-6 w-6 md:h-8 md:w-8 text-indigo-600" />
+                  <Activity className="h-6 w-6 md:h-8 md:w-8 text-indigo-600" />
               </div>
               <div className="md:ml-4">
                 <p className="text-xs font-medium text-gray-600">Active</p>

@@ -137,6 +137,7 @@ function MainApp() {
           onCartClick={() => handleViewChange('cart')}
           onMenuClick={() => handleViewChange('menu')}
           onMemberClick={handleMemberClick}
+          currentMember={currentMember}
         />
       )}
       {currentView === 'menu' && (
@@ -146,6 +147,7 @@ function MainApp() {
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
           hasPopularItems={hasPopularItems}
+          currentMember={currentMember}
         />
       )}
       

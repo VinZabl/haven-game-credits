@@ -23,7 +23,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
   const { siteSettings } = useSiteSettings();
   const { currentMember } = useMemberAuth();
   const orderOption = siteSettings?.order_option || 'order_via_messenger';
-  const [step, setStep] = useState<'details' | 'payment' | 'summary'>('details');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const paymentDetailsRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
@@ -45,6 +44,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [generatedInvoiceNumber, setGeneratedInvoiceNumber] = useState<string | null>(null);
   const [invoiceNumberDate, setInvoiceNumberDate] = useState<string | null>(null);
+  const [showPaymentDetailsModal, setShowPaymentDetailsModal] = useState(false);
 
   // Extract original menu item ID from cart item ID (format: "menuItemId:::CART:::timestamp-random")
   // This allows us to group all packages from the same game together
@@ -213,18 +213,12 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
 
   React.useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [step]);
+  }, []);
 
-  // Auto-scroll to payment details when payment method is selected
+  // Show payment details modal when payment method is selected
   React.useEffect(() => {
-    if (paymentMethod && paymentDetailsRef.current) {
-      setShowScrollIndicator(true); // Reset to show indicator when payment method is selected
-      setTimeout(() => {
-        paymentDetailsRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 100);
+    if (paymentMethod) {
+      setShowPaymentDetailsModal(true);
     }
   }, [paymentMethod]);
 
@@ -254,7 +248,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     return () => {
       observer.disconnect();
     };
-  }, [step]);
+  }, []);
 
   const selectedPaymentMethod = paymentMethods.find(method => method.id === paymentMethod);
   
@@ -272,9 +266,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     }
   };
 
-  const handleProceedToPayment = () => {
-    setStep('payment');
-  };
 
   const handleReceiptUpload = async (file: File) => {
     try {
@@ -309,20 +300,33 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     setInvoiceNumberDate(null);
   };
 
+  // Helper function to get current date in Philippine timezone (Asia/Manila, UTC+8)
+  const getPhilippineDate = () => {
+    const now = new Date();
+    // Convert to Philippine time (UTC+8)
+    const philippineTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+    // Get date components
+    const year = philippineTime.getFullYear();
+    const month = String(philippineTime.getMonth() + 1).padStart(2, '0');
+    const day = String(philippineTime.getDate()).padStart(2, '0');
+    return {
+      dateString: `${year}-${month}-${day}`, // YYYY-MM-DD
+      dayOfMonth: philippineTime.getDate()
+    };
+  };
+
   // Generate invoice number (format: {orderNumber}M{day}D{orderNumber})
   // Example: 1M17D1 = 1st order on the 17th day of the month
   //          1M17D2 = 2nd order on the 17th day of the month
-  // Resets daily at 12:00 AM local time
-  // The invoice number increments each time "Copy Order Message" is clicked
-  // Subsequent calls (like "Order via Messenger") will reuse the same invoice number
-  // Uses database (site_settings) to track invoice count
+  // Resets daily at 12:00 AM Philippine time (Asia/Manila, UTC+8)
+  // The invoice number increments each time "Copy Order Message" is clicked (forceNew = true)
+  // Subsequent calls (like "Order via Messenger") will reuse the same invoice number (forceNew = false)
+  // Uses database (site_settings) to track invoice count with proper locking to prevent race conditions
   const generateInvoiceNumber = async (forceNew: boolean = false): Promise<string> => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-    const dayOfMonth = today.getDate();
+    const { dateString: todayStr, dayOfMonth } = getPhilippineDate();
     
-    // Check if we already generated an invoice number for today
-    // If forceNew is false, reuse the existing number
+    // Check if we already generated an invoice number for today and forceNew is false
+    // If forceNew is false, reuse the existing number from state
     if (!forceNew && generatedInvoiceNumber && invoiceNumberDate === todayStr) {
       return generatedInvoiceNumber;
     }
@@ -333,6 +337,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
       const dateSettingId = 'invoice_count_date';
       
       // Fetch current invoice count and date from database
+      // Use a transaction-like approach: fetch, check, update
       const { data: countData, error: countError } = await supabase
         .from('site_settings')
         .select('value')
@@ -363,34 +368,52 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
         // New day - reset the count to 0
         currentCount = 0;
         
-        // Update both count and date in database
-        await supabase
+        // Update both count and date in database atomically
+        const { error: updateCountError } = await supabase
           .from('site_settings')
           .upsert({ id: countSettingId, value: '0', type: 'number', description: 'Current invoice count for the day' }, { onConflict: 'id' });
         
-        await supabase
+        if (updateCountError) {
+          console.error('Error updating invoice count:', updateCountError);
+        }
+        
+        const { error: updateDateError } = await supabase
           .from('site_settings')
           .upsert({ id: dateSettingId, value: todayStr, type: 'text', description: 'Date of the current invoice count' }, { onConflict: 'id' });
+        
+        if (updateDateError) {
+          console.error('Error updating invoice date:', updateDateError);
+        }
       } else {
         // Same day - get current count from database
         currentCount = countData?.value ? parseInt(countData.value, 10) : 0;
       }
       
-      // If forceNew is true (Copy button clicked), increment the count
+      // If forceNew is true (Copy button clicked), always increment the count
+      // This ensures each new order gets a new invoice number
       if (forceNew) {
         currentCount += 1;
         
-        // Update count in database
-        await supabase
+        // Update count in database - ensure this completes before returning
+        const { error: updateError } = await supabase
           .from('site_settings')
           .upsert({ id: countSettingId, value: currentCount.toString(), type: 'number', description: 'Current invoice count for the day' }, { onConflict: 'id' });
+        
+        if (updateError) {
+          console.error('Error updating invoice count:', updateError);
+          // Still use the incremented count even if update fails
+        }
       } else {
         // If forceNew is false and no count exists, start at 1
         if (currentCount === 0) {
           currentCount = 1;
-          await supabase
+          const { error: updateError } = await supabase
             .from('site_settings')
             .upsert({ id: countSettingId, value: currentCount.toString(), type: 'number', description: 'Current invoice count for the day' }, { onConflict: 'id' });
+          
+          if (updateError) {
+            console.error('Error updating invoice count:', updateError);
+          }
         }
       }
 
@@ -409,8 +432,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     } catch (error) {
       console.error('Error generating invoice number:', error);
       // Fallback to a simple format if there's an error
-      const today = new Date();
-      const dayOfMonth = today.getDate();
+      const { dayOfMonth } = getPhilippineDate();
       return `1M${dayOfMonth}D1`;
     }
   };
@@ -632,6 +654,15 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     try {
       isSavingOrder.current = true;
       const customerInfo = getCustomerInfo();
+      
+      // Generate invoice number if not already generated
+      // This ensures each order has a unique invoice number
+      let invoiceNum = generatedInvoiceNumber;
+      if (!invoiceNum || invoiceNumberDate !== getPhilippineDate().dateString) {
+        // Generate new invoice number (forceNew = true to ensure increment)
+        invoiceNum = await generateInvoiceNumber(true);
+      }
+      
       const newOrder = await createOrder({
         order_items: cartItems,
         customer_info: customerInfo as Record<string, string> | Array<{ game: string; package: string; fields: Record<string, string> }>,
@@ -640,6 +671,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
         total_price: totalPrice,
         member_id: currentMember?.id,
         order_option: orderOption,
+        invoice_number: invoiceNum,
       });
       
       if (newOrder) {
@@ -670,17 +702,40 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
       if (isIOS) {
         // On iOS, generate message synchronously using optimistic invoice number
         // Then copy immediately, then update database in background
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const dayOfMonth = today.getDate();
+        const { dateString: todayStr, dayOfMonth } = getPhilippineDate();
         
         // Optimistically increment invoice number
+        // Fetch current count from database first for accuracy (quick async call)
         let optimisticCount = 1;
-        if (generatedInvoiceNumber && invoiceNumberDate === todayStr) {
-          // Extract current count from existing invoice number
-          const match = generatedInvoiceNumber.match(/AKGXT1M\d+D(\d+)/);
-          if (match) {
-            optimisticCount = parseInt(match[1], 10) + 1;
+        try {
+          const { data: countData } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('id', 'invoice_count')
+            .maybeSingle();
+          
+          const { data: dateData } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('id', 'invoice_count_date')
+            .maybeSingle();
+          
+          const lastDate = dateData?.value || null;
+          if (lastDate === todayStr) {
+            // Same day - increment from database count
+            optimisticCount = countData?.value ? parseInt(countData.value, 10) + 1 : 1;
+          } else {
+            // New day - start at 1
+            optimisticCount = 1;
+          }
+        } catch (error) {
+          console.error('Error fetching invoice count for iOS:', error);
+          // Fallback: increment from existing state if available
+          if (generatedInvoiceNumber && invoiceNumberDate === todayStr) {
+            const match = generatedInvoiceNumber.match(/AKGXT1M\d+D(\d+)/);
+            if (match) {
+              optimisticCount = parseInt(match[1], 10) + 1;
+            }
           }
         }
         
@@ -710,12 +765,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           setTimeout(() => setCopied(false), 2000);
           
           // Update database in background (async, doesn't block)
+          // This ensures the count is properly saved for the next order
           generateInvoiceNumber(true).then((actualInvoiceNumber) => {
-            // Regenerate message with actual invoice number and update state
-            generateOrderMessage(false).then((actualMessage) => {
-              // Message is already copied, just update state
-              setGeneratedInvoiceNumber(actualInvoiceNumber);
-            }).catch(console.error);
+            // Update state with actual invoice number
+            setGeneratedInvoiceNumber(actualInvoiceNumber);
+            setInvoiceNumberDate(todayStr);
           }).catch(console.error);
         } else {
           console.error('Failed to copy message on iOS');
@@ -1275,34 +1329,29 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
     });
   }, [hasAnyCustomFields, itemsWithCustomFields, customFieldValues, useMultipleAccounts, canUseMultipleAccounts, itemsByGameAndVariation]);
 
-  if (step === 'details') {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center mb-8 relative">
-          <button
-            onClick={onBack}
-            className="flex items-center text-cafe-textMuted hover:text-cafe-primary transition-colors duration-200 absolute left-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-3xl font-semibold text-cafe-text">Order Details</h1>
-        </div>
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-center mb-8 relative">
+        <button
+          onClick={onBack}
+          className="flex items-center text-cafe-textMuted hover:text-cafe-primary transition-colors duration-200 absolute left-0"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="text-3xl font-semibold text-cafe-text">Top Up</h1>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
           {/* Customer Details Form */}
-          <div className="glass-card rounded-xl p-6">
-            <h2 className="text-2xl font-medium text-cafe-text mb-6">Customer Information</h2>
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                1
+              </div>
+              <h2 className="text-sm font-medium text-cafe-text">Customer Information</h2>
+            </div>
             
             <form className="space-y-6">
-              {/* Show count of items with custom fields */}
-              {hasAnyCustomFields && itemsWithCustomFields.length > 0 && (
-                <div className="mb-4 p-3 glass-strong border border-cafe-primary/30 rounded-lg">
-                  <p className="text-sm text-cafe-text">
-                    <span className="font-semibold text-cafe-primary">{itemsWithCustomFields.length}</span> game{itemsWithCustomFields.length > 1 ? 's' : ''} require{itemsWithCustomFields.length === 1 ? 's' : ''} additional information
-                  </p>
-                </div>
-              )}
-
               {/* Bulk Input Section */}
               {itemsWithCustomFields.length >= 2 && (
                 <div className="mb-6 p-4 glass-strong border border-cafe-primary/30 rounded-lg">
@@ -1500,109 +1549,32 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
                 </div>
               )}
 
-              <button
-                onClick={handleProceedToPayment}
-                disabled={!isDetailsValid}
-                className={`w-full py-4 rounded-xl font-medium text-lg transition-all duration-200 transform ${
-                  isDetailsValid
-                    ? 'text-white hover:opacity-90 hover:scale-[1.02]'
-                    : 'glass text-cafe-textMuted cursor-not-allowed'
-                }`}
-                style={isDetailsValid ? { backgroundColor: '#1E7ACB' } : {}}
-              >
-                Proceed to Payment
-              </button>
             </form>
           </div>
-
-          {/* Order Summary */}
-          <div className="glass-card rounded-xl p-6">
-            <h2 className="text-2xl font-medium text-cafe-text mb-6">Order Summary</h2>
-            
-            <div className="space-y-4 mb-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex items-start gap-4 py-3 border-b border-cafe-primary/30">
-                  {/* Game Icon */}
-                  <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className={`w-full h-full flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
-                      <div className="text-2xl opacity-20 text-gray-400">🎮</div>
-                    </div>
-                  </div>
-                  
-                  {/* Game Details */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-cafe-text mb-1">{item.name}</h4>
-                    {item.selectedVariation && (
-                      <p className="text-sm text-cafe-textMuted">Package: {item.selectedVariation.name}</p>
-                    )}
-                    {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                      <p className="text-sm text-cafe-textMuted">
-                        Add-ons: {item.selectedAddOns.map(addOn => addOn.name).join(', ')}
-                      </p>
-                    )}
-                    <p className="text-sm text-cafe-textMuted mt-1">₱{item.totalPrice} × {item.quantity}</p>
-                  </div>
-                  
-                  {/* Price */}
-                  <div className="flex-shrink-0">
-                  <span className="font-semibold text-cafe-text">₱{item.totalPrice * item.quantity}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="border-t border-cafe-primary/30 pt-4">
-              <div className="flex items-center justify-between text-2xl font-semibold text-cafe-text">
-                <span>Total:</span>
-                <span className="text-white">₱{totalPrice}</span>
-              </div>
-            </div>
-            
-          </div>
         </div>
-      </div>
-    );
-  }
 
-  // Payment Step
-  if (step === 'payment') {
-    return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-center mb-8 relative">
-        <button
-          onClick={() => setStep('details')}
-          className="flex items-center text-cafe-textMuted hover:text-cafe-primary transition-colors duration-200 absolute left-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-3xl font-semibold text-cafe-text">Payment</h1>
-      </div>
+        {/* Separator */}
+        <div className="border-t border-cafe-primary/30 my-6"></div>
 
-      <div className="max-w-2xl mx-auto">
-        {/* Payment Method Selection */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-2xl font-medium text-cafe-text mb-6">Choose Payment Method</h2>
+        {/* Payment Section */}
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+              2
+            </div>
+            <h2 className="text-sm font-medium text-cafe-text">Choose Payment Method</h2>
+          </div>
           
-          <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
             {paymentMethods.map((method) => (
               <button
                 key={method.id}
                 type="button"
                 onClick={() => {
                   setPaymentMethod(method.id as PaymentMethod);
+                  setShowPaymentDetailsModal(true);
                 }}
-                className={`p-2 md:p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 ${
+                className={`p-2 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center gap-0 ${
                   paymentMethod === method.id
                     ? 'border-transparent text-white'
                     : 'glass border-cafe-primary/30 text-cafe-text hover:border-cafe-primary hover:glass-strong'
@@ -1610,319 +1582,107 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
                 style={paymentMethod === method.id ? { backgroundColor: '#1E7ACB' } : {}}
               >
                 {/* Icon on Top */}
-                <div className="relative w-12 h-12 md:w-14 md:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg flex items-center justify-center">
-                  <span className="text-xl md:text-2xl">💳</span>
+                <div className="relative w-8 h-8 md:w-14 md:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg flex items-center justify-center p-0">
+                  <span className="text-base md:text-2xl">💳</span>
                 </div>
                 {/* Text Below */}
-                <span className="font-medium text-xs md:text-sm text-center">{method.name}</span>
+                <span className="font-medium text-xs text-center">{method.name}</span>
               </button>
             ))}
           </div>
 
-          {/* Payment Details with QR Code */}
-          {selectedPaymentMethod && (
-            <div 
-              ref={paymentDetailsRef}
-              className="glass-strong rounded-lg p-6 mb-6 border border-cafe-primary/30"
-            >
-              <h3 className="font-medium text-cafe-text mb-4">Payment Details</h3>
-              <div className="space-y-4">
-                {/* Payment Method Name */}
-                <div>
-                  <p className="text-lg font-semibold text-cafe-text">{selectedPaymentMethod.name}</p>
-                </div>
-                
-                {/* Account Name with Copy Button */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm text-cafe-textMuted">Account Name:</p>
-                    <button
-                      onClick={() => handleCopyAccountName(selectedPaymentMethod.account_name)}
-                      className="px-3 py-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 flex-shrink-0 text-sm font-medium"
-                      title="Copy account name"
-                    >
-                      {copiedAccountName ? (
-                        <span className="text-green-400">Copied!</span>
-                      ) : (
-                        <span className="text-cafe-text">Copy</span>
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-cafe-text font-medium">{selectedPaymentMethod.account_name}</p>
-                </div>
-                
-                {/* Other Option */}
-                <div>
-                  <h3 className="font-medium text-cafe-text text-center">Other Option</h3>
-                </div>
-                
-                {/* Download QR Button and QR Image */}
-                {selectedPaymentMethod.qr_code_url ? (
-                <div className="flex flex-col items-center gap-3">
-                  {!isMessengerBrowser && (
-                    <button
-                      onClick={() => handleDownloadQRCode(selectedPaymentMethod.qr_code_url, selectedPaymentMethod.name)}
-                      className="px-3 py-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 text-sm font-medium text-cafe-text flex items-center gap-2"
-                      title="Download QR code"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>Download QR</span>
-                    </button>
+
+          {/* Receipt Upload Section */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                3
+              </div>
+              <label className="text-sm font-medium text-cafe-text">
+                Payment Receipt <span className="text-red-400">*</span>
+              </label>
+            </div>
+            
+            {!receiptPreview ? (
+              <div className="relative glass border-2 border-dashed border-cafe-primary/30 rounded-lg p-6 text-center hover:border-cafe-primary transition-colors duration-200">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleReceiptUpload(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="receipt-upload"
+                  disabled={uploadingReceipt}
+                />
+                <label
+                  htmlFor="receipt-upload"
+                  className={`cursor-pointer flex flex-col items-center space-y-2 ${uploadingReceipt ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {uploadingReceipt ? (
+                    <>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cafe-primary"></div>
+                      <span className="text-sm text-cafe-textMuted">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-cafe-primary" />
+                      <span className="text-sm text-cafe-text">Click to upload receipt</span>
+                      <span className="text-xs text-cafe-textMuted">JPEG, PNG, WebP, or GIF (Max 5MB)</span>
+                    </>
                   )}
-                  {isMessengerBrowser && (
-                    <p className="text-xs text-cafe-textMuted text-center">Long-press the QR code to save</p>
-                  )}
-                  <img 
-                    src={selectedPaymentMethod.qr_code_url} 
-                    alt={`${selectedPaymentMethod.name} QR Code`}
-                    className="w-32 h-32 rounded-lg border-2 border-cafe-primary/30 shadow-sm"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.pexels.com/photos/8867482/pexels-photo-8867482.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-                    }}
-                  />
+                </label>
+              </div>
+            ) : (
+              <div className="relative glass border border-cafe-primary/30 rounded-lg p-4">
+                <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold">
+                  1
                 </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-32 h-32 rounded-lg border-2 border-cafe-primary/30 shadow-sm bg-cafe-darkCard flex items-center justify-center">
-                      <p className="text-xs text-cafe-textMuted text-center">No QR Code Available</p>
-                    </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={receiptPreview}
+                      alt="Receipt preview"
+                      className="w-20 h-20 object-cover rounded-lg border border-cafe-primary/30"
+                    />
                   </div>
-                )}
-                
-                {/* Account Number with Copy Button */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm text-cafe-textMuted">Account Number:</p>
-                    <button
-                      onClick={() => handleCopyAccountNumber(selectedPaymentMethod.account_number)}
-                      className="px-3 py-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 flex-shrink-0 text-sm font-medium"
-                      title="Copy account number"
-                    >
-                      {copiedAccountNumber ? (
-                        <span className="text-green-400">Copied!</span>
-                      ) : (
-                        <span className="text-cafe-text">Copy</span>
-                      )}
-                    </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-cafe-text truncate">
+                      {receiptFile?.name || 'Receipt uploaded'}
+                    </p>
+                    <p className="text-xs text-cafe-textMuted">
+                      {receiptImageUrl ? '✓ Uploaded successfully' : 'Uploading...'}
+                    </p>
                   </div>
-                  <p className="font-mono text-cafe-text font-medium text-xl md:text-2xl">{selectedPaymentMethod.account_number}</p>
-                </div>
-                
-                {/* Amount and Instructions */}
-                <div className="pt-2 border-t border-cafe-primary/20">
-                  <p className="text-xl font-semibold text-white mb-2">Amount: ₱{totalPrice}</p>
-                  <p className="text-sm text-cafe-textMuted">Press the copy button to copy the number or download the QR code, make a payment, then proceed to the next page to upload your receipt.</p>
+                  <button
+                    onClick={handleReceiptRemove}
+                    className="flex-shrink-0 p-2 glass-strong rounded-lg hover:bg-red-500/20 transition-colors duration-200"
+                    disabled={uploadingReceipt}
+                  >
+                    <X className="h-4 w-4 text-cafe-text" />
+                  </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Confirm Button */}
-          <button
-            onClick={() => setStep('summary')}
-            disabled={!paymentMethod}
-            className={`w-full py-4 rounded-xl font-medium text-lg transition-all duration-200 transform mb-6 ${
-              paymentMethod
-                ? 'text-white hover:opacity-90 hover:scale-[1.02]'
-                : 'glass text-cafe-textMuted cursor-not-allowed'
-            }`}
-            style={paymentMethod ? { backgroundColor: '#1E7ACB' } : {}}
-          >
-            Confirm
-          </button>
+            {receiptError && (
+              <p className="mt-2 text-sm text-red-400">{receiptError}</p>
+            )}
 
-          {/* Payment instructions */}
-          <div className="glass border border-cafe-primary/30 rounded-lg p-4">
-            <h4 className="font-medium text-cafe-text mb-2">📸 Payment Proof Required</h4>
-            <p className="text-sm text-cafe-textMuted">
-              After making your payment, please upload a screenshot of your payment receipt on the next page. This helps us verify and process your order quickly.
+            <p className="text-xs text-cafe-textMuted text-center mt-3">
+              Please upload a screenshot of your payment receipt. This helps us verify and process your order quickly.
             </p>
           </div>
         </div>
-      </div>
-    </div>
-    );
-  }
 
-  // Summary Step - Final Order Summary
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-center mb-8 relative">
-        <button
-          onClick={() => setStep('payment')}
-          className="flex items-center text-cafe-textMuted hover:text-cafe-primary transition-colors duration-200 absolute left-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-3xl font-semibold text-cafe-text">Order</h1>
-      </div>
+        {/* Separator */}
+        <div className="border-t border-cafe-primary/30 my-6"></div>
 
-      <div className="glass-card rounded-xl p-6">
-        <div className="space-y-4 mb-6">
-          {cartItems.map((item) => (
-            <div key={item.id} className="flex items-start gap-4 py-3 border-b border-cafe-primary/30">
-              {/* Game Icon */}
-              <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg">
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <div className={`w-full h-full flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
-                  <div className="text-2xl opacity-20 text-gray-400">🎮</div>
-                </div>
-              </div>
-              
-              {/* Game Details */}
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-cafe-text mb-1">{item.name}</h4>
-                {item.selectedVariation && (
-                  <p className="text-sm text-cafe-textMuted">Package: {item.selectedVariation.name}</p>
-                )}
-                {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                  <p className="text-sm text-cafe-textMuted">
-                    Add-ons: {item.selectedAddOns.map(addOn => 
-                      addOn.quantity && addOn.quantity > 1 
-                        ? `${addOn.name} x${addOn.quantity}`
-                        : addOn.name
-                    ).join(', ')}
-                  </p>
-                )}
-                <p className="text-sm text-cafe-textMuted mt-1">₱{item.totalPrice} × {item.quantity}</p>
-              </div>
-              
-              {/* Price */}
-              <div className="flex-shrink-0">
-                <span className="font-semibold text-cafe-text">₱{item.totalPrice * item.quantity}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="pt-4 mb-6">
-          <div className="flex items-center justify-between text-2xl font-semibold text-cafe-text">
-            <span>Total:</span>
-            <span className="text-white">₱{totalPrice}</span>
-          </div>
-        </div>
-
-        {/* Customer Information Display */}
-        <div className="mb-6">
-          <h4 className="font-medium text-cafe-text mb-2">Customer Information</h4>
-          <div className="space-y-1">
-            {selectedPaymentMethod && (
-              <p className="text-sm text-cafe-textMuted">Payment Method: {selectedPaymentMethod.name}</p>
-            )}
-            {hasAnyCustomFields ? (
-              itemsWithCustomFields.map((item) => {
-                const originalId = getOriginalMenuItemId(item.id);
-                const fields = item.customFields?.map(field => {
-                  const valueKey = `${originalId}_${field.key}`;
-                  const value = customFieldValues[valueKey];
-                  return value ? (
-                    <p key={valueKey} className="text-sm text-cafe-textMuted">
-                      {field.label}: {value}
-                    </p>
-                  ) : null;
-                }).filter(Boolean);
-                
-                return fields && fields.length > 0 ? fields : null;
-              })
-            ) : (
-              customFieldValues['default_ign'] && (
-                <p className="text-sm text-cafe-textMuted">
-                  IGN: {customFieldValues['default_ign']}
-                </p>
-              )
-            )}
-          </div>
-        </div>
-
-        {/* Receipt Upload Section */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-cafe-text mb-2">
-            Payment Receipt <span className="text-red-400">*</span>
-          </label>
-          
-          {!receiptPreview ? (
-            <div className="relative glass border-2 border-dashed border-cafe-primary/30 rounded-lg p-6 text-center hover:border-cafe-primary transition-colors duration-200">
-              <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold">
-                1
-              </div>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleReceiptUpload(file);
-                  }
-                }}
-                className="hidden"
-                id="receipt-upload"
-                disabled={uploadingReceipt}
-              />
-              <label
-                htmlFor="receipt-upload"
-                className={`cursor-pointer flex flex-col items-center space-y-2 ${uploadingReceipt ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {uploadingReceipt ? (
-                  <>
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cafe-primary"></div>
-                    <span className="text-sm text-cafe-textMuted">Uploading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-cafe-primary" />
-                    <span className="text-sm text-cafe-text">Click to upload receipt</span>
-                    <span className="text-xs text-cafe-textMuted">JPEG, PNG, WebP, or GIF (Max 5MB)</span>
-                  </>
-                )}
-              </label>
-            </div>
-          ) : (
-            <div className="relative glass border border-cafe-primary/30 rounded-lg p-4">
-              <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-cafe-primary text-white flex items-center justify-center text-xs font-bold">
-                1
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  <img
-                    src={receiptPreview}
-                    alt="Receipt preview"
-                    className="w-20 h-20 object-cover rounded-lg border border-cafe-primary/30"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-cafe-text truncate">
-                    {receiptFile?.name || 'Receipt uploaded'}
-                  </p>
-                  <p className="text-xs text-cafe-textMuted">
-                    {receiptImageUrl ? '✓ Uploaded successfully' : 'Uploading...'}
-                  </p>
-                </div>
-                <button
-                  onClick={handleReceiptRemove}
-                  className="flex-shrink-0 p-2 glass-strong rounded-lg hover:bg-red-500/20 transition-colors duration-200"
-                  disabled={uploadingReceipt}
-                >
-                  <X className="h-4 w-4 text-cafe-text" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {receiptError && (
-            <p className="mt-2 text-sm text-red-400">{receiptError}</p>
-          )}
-        </div>
-
+      {/* Place Order Section */}
+      <div>
         <div ref={buttonsRef}>
           {orderOption === 'order_via_messenger' ? (
             <>
@@ -1941,7 +1701,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
                     ? 'bg-cafe-primary text-white'
                     : 'bg-cafe-textMuted/30 text-cafe-textMuted'
                 }`}>
-                  2
+                  4
                 </div>
                 {copied ? (
                   <>
@@ -1972,7 +1732,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
                     ? 'bg-cafe-primary text-white'
                     : 'bg-cafe-textMuted/30 text-cafe-textMuted'
                 }`}>
-                  3
+                  5
                 </div>
                 {uploadingReceipt ? 'Uploading Receipt...' : 'Order via Messenger'}
               </button>
@@ -1999,7 +1759,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
                     ? 'bg-cafe-primary text-white'
                     : 'bg-cafe-textMuted/30 text-cafe-textMuted'
                 }`}>
-                  2
+                  4
                 </div>
                 {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
               </button>
@@ -2007,6 +1767,114 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           )}
         </div>
       </div>
+
+      {/* Payment Details Modal */}
+      {showPaymentDetailsModal && selectedPaymentMethod && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="glass-card rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-semibold text-cafe-text">Payment Details</h3>
+              <button
+                onClick={() => setShowPaymentDetailsModal(false)}
+                className="p-2 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200"
+              >
+                <X className="h-5 w-5 text-cafe-text" />
+              </button>
+            </div>
+
+            <p className="text-xs text-cafe-textMuted mb-6">
+              Press the copy button to copy the number or download the QR code, make a payment, then proceed to upload your receipt.
+            </p>
+
+            <div className="space-y-4">
+              {/* Payment Method Name and Amount */}
+              <div className="flex items-center justify-between">
+                <p className="text-lg font-semibold text-cafe-text">{selectedPaymentMethod.name}</p>
+                <p className="text-xl font-semibold text-white">₱{totalPrice}</p>
+              </div>
+              
+              {/* Account Number and Account Name in one row */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Account Number with Copy Button */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-cafe-textMuted">Number:</p>
+                    <button
+                      onClick={() => handleCopyAccountNumber(selectedPaymentMethod.account_number)}
+                      className="p-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 flex-shrink-0"
+                      title="Copy account number"
+                    >
+                      {copiedAccountNumber ? (
+                        <Check className="h-3.5 w-3.5 text-green-400" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 text-cafe-text" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="font-mono text-cafe-text font-medium text-sm">{selectedPaymentMethod.account_number}</p>
+                </div>
+                
+                {/* Account Name with Copy Button */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-cafe-textMuted">Name:</p>
+                    <button
+                      onClick={() => handleCopyAccountName(selectedPaymentMethod.account_name)}
+                      className="p-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 flex-shrink-0"
+                      title="Copy account name"
+                    >
+                      {copiedAccountName ? (
+                        <Check className="h-3.5 w-3.5 text-green-400" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 text-cafe-text" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-cafe-text font-medium text-sm">{selectedPaymentMethod.account_name}</p>
+                </div>
+              </div>
+              
+              {/* Other Option */}
+              <div>
+                <h3 className="font-medium text-cafe-text text-center">Other Option</h3>
+              </div>
+              
+              {/* Download QR Button and QR Image */}
+              {selectedPaymentMethod.qr_code_url ? (
+              <div className="flex flex-col items-center gap-3">
+                {!isMessengerBrowser && (
+                  <button
+                    onClick={() => handleDownloadQRCode(selectedPaymentMethod.qr_code_url, selectedPaymentMethod.name)}
+                    className="px-3 py-1.5 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200 text-sm font-medium text-cafe-text flex items-center gap-2"
+                    title="Download QR code"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download QR</span>
+                  </button>
+                )}
+                {isMessengerBrowser && (
+                  <p className="text-xs text-cafe-textMuted text-center">Long-press the QR code to save</p>
+                )}
+                <img 
+                  src={selectedPaymentMethod.qr_code_url} 
+                  alt={`${selectedPaymentMethod.name} QR Code`}
+                  className="w-32 h-32 rounded-lg border-2 border-cafe-primary/30 shadow-sm"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.pexels.com/photos/8867482/pexels-photo-8867482.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
+                  }}
+                />
+              </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-32 h-32 rounded-lg border-2 border-cafe-primary/30 shadow-sm bg-cafe-darkCard flex items-center justify-center">
+                    <p className="text-xs text-cafe-textMuted text-center">No QR Code Available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Status Modal */}
       <OrderStatusModal

@@ -595,19 +595,19 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
                                 </span>
                                 
                                 <div className="flex items-center space-x-2">
-                                  <button
-                                    onClick={() => handleEditMethod(method)}
-                                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </button>
-                                  
-                                  <button
-                                    onClick={() => handleDeleteMethod(method.uuid_id, method.name)}
-                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
+                                <button
+                                  onClick={() => handleEditMethod(method)}
+                                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleDeleteMethod(method.uuid_id, method.name)}
+                                  className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
                                 </div>
                               </div>
                               
@@ -655,21 +655,21 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({ onBack }) =
                       }`}>
                         {method.active ? 'Active' : 'Inactive'}
                       </span>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEditMethod(method)}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
                       
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEditMethod(method)}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDeleteMethod(method.uuid_id, method.name)}
-                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      <button
+                        onClick={() => handleDeleteMethod(method.uuid_id, method.name)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                       </div>
                     </div>
                     

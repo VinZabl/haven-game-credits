@@ -1,6 +1,7 @@
 import React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Coins } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
+import { Member } from '../types';
 
 interface SubNavProps {
   selectedCategory: string;
@@ -8,9 +9,10 @@ interface SubNavProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   hasPopularItems: boolean;
+  currentMember?: Member | null;
 }
 
-const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, searchQuery, onSearchChange, hasPopularItems }) => {
+const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, searchQuery, onSearchChange, hasPopularItems, currentMember }) => {
   const { categories, loading } = useCategories();
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
 

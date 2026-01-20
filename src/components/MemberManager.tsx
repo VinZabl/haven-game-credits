@@ -45,6 +45,19 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
     });
   }, [members, searchQuery, memberFilter, userTypeFilter]);
 
+  // Sync editingMember with updated members array
+  useEffect(() => {
+    if (editingMember) {
+      const updatedMember = members.find(m => m.id === editingMember.id);
+      if (updatedMember && (
+        updatedMember.user_type !== editingMember.user_type ||
+        updatedMember.status !== editingMember.status
+      )) {
+        setEditingMember(updatedMember);
+      }
+    }
+  }, [members, editingMember]);
+
   // Fetch order counts and total costs for all members
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -405,13 +418,9 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                     <select
                       value={editingMember.user_type}
                       onChange={async (e) => {
-                        const success = await updateMember(editingMember.id, {
+                        await updateMember(editingMember.id, {
                           user_type: e.target.value as MemberUserType
                         });
-                        if (success) {
-                          await fetchMembers();
-                          setEditingMember({ ...editingMember, user_type: e.target.value as MemberUserType });
-                        }
                       }}
                       className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-xs"
                     >
@@ -426,13 +435,9 @@ const MemberManager: React.FC<MemberManagerProps> = ({ onBack }) => {
                     <button
                       onClick={async () => {
                         const newStatus = editingMember.status === 'active' ? 'inactive' : 'active';
-                        const success = await updateMember(editingMember.id, {
+                        await updateMember(editingMember.id, {
                           status: newStatus
                         });
-                        if (success) {
-                          await fetchMembers();
-                          setEditingMember({ ...editingMember, status: newStatus });
-                        }
                       }}
                       className={`w-full px-4 py-2 rounded text-xs font-semibold transition-colors ${
                         editingMember.status === 'active'

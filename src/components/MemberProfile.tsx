@@ -14,6 +14,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (currentMember) {
@@ -151,73 +152,29 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
               ) : orders.length === 0 ? (
                 <div className="text-center text-cafe-textMuted py-12">No orders found.</div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {orders.map((order) => (
-                    <div key={order.id} className="glass-strong rounded-lg p-4 border border-cafe-primary/30">
-                      <div className="flex items-start justify-between mb-4">
+                    <div
+                      key={order.id}
+                      onClick={() => setSelectedOrder(order)}
+                      className="glass-strong rounded-lg p-4 border border-cafe-primary/30 cursor-pointer hover:bg-cafe-primary/10 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-mono text-sm text-cafe-text mb-1">Order #{order.id.slice(0, 8)}</p>
-                          <p className="text-xs text-cafe-textMuted">{new Date(order.created_at).toLocaleString()}</p>
+                          <p className="font-mono text-sm text-cafe-text">#{order.id.slice(0, 8)}</p>
+                          <p className="text-xs text-cafe-textMuted mt-1">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
                         </div>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold flex-shrink-0 ml-2 ${getOrderStatusClass(order)}`}
-                        >
-                          {getOrderStatus(order)}
-                        </span>
-                      </div>
-                      
-                      {/* Order Items */}
-                      <div className="space-y-3 mb-4">
-                        <h4 className="font-medium text-cafe-text text-sm">Order Details</h4>
-                        {Array.isArray(order.order_items) && order.order_items.length > 0 ? (
-                          <div className="space-y-3">
-                            {order.order_items.map((item, idx) => (
-                              <div key={idx} className="flex items-start gap-4 py-2 border-b border-cafe-primary/20 last:border-b-0">
-                                <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg">
-                                  {item.image ? (
-                                    <img
-                                      src={item.image}
-                                      alt={item.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <div className="text-xl opacity-20 text-gray-400">🎮</div>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-cafe-text text-sm">{item.name}</h4>
-                                  {item.selectedVariation && (
-                                    <p className="text-sm text-cafe-textMuted">Package: {item.selectedVariation.name}</p>
-                                  )}
-                                  {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                                    <p className="text-sm text-cafe-textMuted">
-                                      Add-ons: {item.selectedAddOns.map(addOn => 
-                                        addOn.quantity && addOn.quantity > 1 
-                                          ? `${addOn.name} x${addOn.quantity}`
-                                          : addOn.name
-                                      ).join(', ')}
-                                    </p>
-                                  )}
-                                  <p className="text-sm text-cafe-textMuted">₱{item.totalPrice} × {item.quantity}</p>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <span className="font-semibold text-cafe-text">₱{(item.totalPrice * item.quantity).toFixed(2)}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-cafe-textMuted text-sm">No items</p>
-                        )}
-                      </div>
-                      
-                      {/* Total */}
-                      <div className="pt-4 border-t border-cafe-primary/30">
-                        <div className="flex items-center justify-between text-lg font-semibold text-cafe-text">
-                          <span>Total:</span>
-                          <span className="text-white">₱{order.total_price.toFixed(2)}</span>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <p className="text-sm font-semibold text-cafe-text whitespace-nowrap">
+                            ₱{order.total_price.toFixed(2)}
+                          </p>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${getOrderStatusClass(order)}`}
+                          >
+                            {getOrderStatus(order)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -228,6 +185,125 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ onClose, onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="glass-card rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header with Close Button */}
+            <div className="flex items-center justify-end mb-4">
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 glass-strong rounded-lg hover:bg-cafe-primary/20 transition-colors duration-200"
+              >
+                <X className="h-5 w-5 text-cafe-text" />
+              </button>
+            </div>
+
+            {/* Order Number, Date, and Status */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-sm text-cafe-text">#{selectedOrder.id.slice(0, 8)}</p>
+                <p className="text-xs text-cafe-textMuted mt-1">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+              </div>
+              <span
+                className={`px-3 py-1.5 rounded text-xs font-semibold flex-shrink-0 ml-2 ${getOrderStatusClass(selectedOrder)}`}
+              >
+                {getOrderStatus(selectedOrder)}
+              </span>
+            </div>
+
+            {/* Order Details */}
+            <div className="mb-4">
+              <h3 className="font-medium text-cafe-text mb-3">Order Details</h3>
+              {Array.isArray(selectedOrder.order_items) && selectedOrder.order_items.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedOrder.order_items.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-xl opacity-20 text-gray-400">🎮</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-cafe-text text-sm mb-1">{item.name}</h4>
+                        {item.selectedVariation && (
+                          <p className="text-xs text-cafe-textMuted mb-1">Package: {item.selectedVariation.name}</p>
+                        )}
+                        {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                          <p className="text-xs text-cafe-textMuted mb-1">
+                            Add-ons: {item.selectedAddOns.map(addOn => 
+                              addOn.quantity && addOn.quantity > 1 
+                                ? `${addOn.name} x${addOn.quantity}`
+                                : addOn.name
+                            ).join(', ')}
+                          </p>
+                        )}
+                        <p className="text-xs text-cafe-textMuted">₱{item.totalPrice} × {item.quantity}</p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="font-semibold text-cafe-text text-sm">₱{(item.totalPrice * item.quantity).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-cafe-textMuted text-sm">No items</p>
+              )}
+            </div>
+
+            {/* Customer Inputs (Custom Fields) */}
+            {selectedOrder.customer_info && Object.keys(selectedOrder.customer_info).length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-medium text-cafe-text mb-3">Customer Information</h3>
+                {Array.isArray(selectedOrder.customer_info) ? (
+                  // Multiple accounts mode
+                  <div className="space-y-3">
+                    {selectedOrder.customer_info.map((account, idx) => (
+                      <div key={idx} className="pb-3 border-b border-cafe-primary/20 last:border-b-0 last:pb-0">
+                        <p className="font-semibold text-cafe-text text-sm mb-2">{account.game}</p>
+                        <p className="text-xs text-cafe-textMuted mb-2">Package: {account.package}</p>
+                        <div className="space-y-1">
+                          {Object.entries(account.fields).map(([label, value]) => (
+                            <p key={label} className="text-xs text-cafe-textMuted">
+                              <span className="font-medium">{label}:</span> {value}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Single account mode
+                  <div className="space-y-1">
+                    {Object.entries(selectedOrder.customer_info).map(([label, value]) => (
+                      <p key={label} className="text-xs text-cafe-textMuted">
+                        <span className="font-medium">{label}:</span> {value}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="pt-4 border-t border-cafe-primary/30">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-cafe-text">Total:</span>
+                <span className="font-semibold text-cafe-text text-lg">₱{selectedOrder.total_price.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

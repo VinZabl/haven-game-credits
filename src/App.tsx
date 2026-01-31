@@ -18,9 +18,9 @@ import { useOrders } from './hooks/useOrders';
 import Footer from './components/Footer';
 
 function MainApp() {
-  const cart = useCart();
-  const { menuItems } = useMenu();
   const { currentMember, logout, loading: authLoading } = useMemberAuth();
+  const cart = useCart(currentMember);
+  const { menuItems } = useMenu();
   const { fetchOrderById } = useOrders();
   
   // Load saved state from localStorage on mount
@@ -306,6 +306,7 @@ function MainApp() {
       {currentView === 'cart' && (
         <Cart 
           cartItems={cart.cartItems}
+          getEffectiveUnitPrice={cart.getEffectiveUnitPrice}
           updateQuantity={cart.updateQuantity}
           removeFromCart={cart.removeFromCart}
           clearCart={cart.clearCart}
@@ -318,6 +319,7 @@ function MainApp() {
       {currentView === 'checkout' && (
         <Checkout 
           cartItems={cart.cartItems}
+          getEffectiveUnitPrice={cart.getEffectiveUnitPrice}
           totalPrice={cart.getTotalPrice()}
           onBack={() => handleViewChange('cart')}
           onNavigateToMenu={() => {

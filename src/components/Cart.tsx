@@ -4,6 +4,7 @@ import { CartItem } from '../types';
 
 interface CartProps {
   cartItems: CartItem[];
+  getEffectiveUnitPrice: (item: CartItem) => number;
   updateQuantity: (id: string, quantity: number) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
@@ -14,6 +15,7 @@ interface CartProps {
 
 const Cart: React.FC<CartProps> = ({
   cartItems,
+  getEffectiveUnitPrice,
   updateQuantity,
   removeFromCart,
   clearCart,
@@ -212,7 +214,7 @@ const Cart: React.FC<CartProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-base font-medium text-cafe-text">{item.name}</h3>
-                    <p className="text-sm font-semibold text-cafe-text">₱{item.totalPrice} each</p>
+                    <p className="text-sm font-semibold text-cafe-text">₱{getEffectiveUnitPrice(item).toFixed(2)} each</p>
                   </div>
                   {item.selectedVariation && (
                     <p className="text-xs text-cafe-textMuted mb-1">Package: {item.selectedVariation.name}</p>
@@ -247,7 +249,7 @@ const Cart: React.FC<CartProps> = ({
                 </div>
 
                 <div className="flex items-center ml-auto">
-                  <p className="text-sm font-semibold text-cafe-text">₱{item.totalPrice * item.quantity}</p>
+                  <p className="text-sm font-semibold text-cafe-text">₱{(getEffectiveUnitPrice(item) * item.quantity).toFixed(2)}</p>
                 </div>
               </div>
             </div>

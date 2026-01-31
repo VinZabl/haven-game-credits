@@ -11,12 +11,13 @@ import OrderStatusModal from './OrderStatusModal';
 
 interface CheckoutProps {
   cartItems: CartItem[];
+  getEffectiveUnitPrice: (item: CartItem) => number;
   totalPrice: number;
   onBack: () => void;
   onNavigateToMenu?: () => void; // Callback to navigate to menu (e.g., after order succeeded)
 }
 
-const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNavigateToMenu }) => {
+const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, totalPrice, onBack, onNavigateToMenu }) => {
   const { paymentMethods } = usePaymentMethods();
   const { uploadImage, uploading: uploadingReceipt } = useImageUpload();
   const { createOrder } = useOrders();
@@ -615,7 +616,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
             const addOnsText = item.selectedAddOns && item.selectedAddOns.length > 0
               ? ` + ${item.selectedAddOns.map(a => a.name).join(', ')}`
               : '';
-            lines.push(`ORDER: ${item.name}${variationText}${addOnsText} x${item.quantity} - ₱${item.totalPrice * item.quantity}`);
+            lines.push(`ORDER: ${item.name}${variationText}${addOnsText} x${item.quantity} - ₱${getEffectiveUnitPrice(item) * item.quantity}`);
           });
         });
       });
@@ -695,7 +696,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           if (item.quantity > 1) {
             orderLine += ` x${item.quantity}`;
           }
-          orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+          orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
           lines.push(orderLine);
         });
       });
@@ -710,7 +711,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           if (item.quantity > 1) {
             orderLine += ` x${item.quantity}`;
           }
-          orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+          orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
           lines.push(orderLine);
         });
       }
@@ -731,7 +732,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
         if (item.quantity > 1) {
           orderLine += ` x${item.quantity}`;
         }
-        orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+        orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
         lines.push(orderLine);
       });
     }
@@ -771,7 +772,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
       }
       
       const newOrder = await createOrder({
-        order_items: cartItems,
+        order_items: cartItems.map((item) => ({ ...item, totalPrice: getEffectiveUnitPrice(item) })),
         customer_info: customerInfo as Record<string, string> | Array<{ game: string; package: string; fields: Record<string, string> }>,
           payment_method_id: paymentMethod!.id,
         receipt_url: receiptImageUrl!,
@@ -929,7 +930,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
             const addOnsText = item.selectedAddOns && item.selectedAddOns.length > 0
               ? ` + ${item.selectedAddOns.map(a => a.name).join(', ')}`
               : '';
-            lines.push(`ORDER: ${item.name}${variationText}${addOnsText} x${item.quantity} - ₱${item.totalPrice * item.quantity}`);
+            lines.push(`ORDER: ${item.name}${variationText}${addOnsText} x${item.quantity} - ₱${getEffectiveUnitPrice(item) * item.quantity}`);
           });
         });
       });
@@ -1009,7 +1010,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           if (item.quantity > 1) {
             orderLine += ` x${item.quantity}`;
           }
-          orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+          orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
           lines.push(orderLine);
         });
       });
@@ -1024,7 +1025,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
           if (item.quantity > 1) {
             orderLine += ` x${item.quantity}`;
           }
-          orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+          orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
           lines.push(orderLine);
         });
       }
@@ -1045,7 +1046,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, totalPrice, onBack, onNa
         if (item.quantity > 1) {
           orderLine += ` x${item.quantity}`;
         }
-        orderLine += ` - ₱${item.totalPrice * item.quantity}`;
+        orderLine += ` - ₱${getEffectiveUnitPrice(item) * item.quantity}`;
         lines.push(orderLine);
       });
     }

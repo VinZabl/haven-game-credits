@@ -183,34 +183,10 @@ img {
   animation-delay: 4s;
 }
 
-/* Trish Devion: off-black background + background.jpg at 20% opacity */
+/* Trish Devion: off-black background (solid color only) */
 .theme-page-bg {
   background-color: #0A0A0A;
   position: relative;
-}
-
-.theme-page-bg::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.2;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Content above background - exclude sticky bar, modals, and fixed-position elements */
-.theme-page-bg > *:not(.sticky-nav-bar):not(.modal-overlay):not(.floating-support-btn) {
-  position: relative;
-  z-index: 1;
 }
 
 /* Legacy: logo overlay (e.g. login page) */

@@ -58,6 +58,8 @@ export interface CartItem extends MenuItem {
   selectedVariation?: Variation;
   selectedAddOns?: AddOn[];
   totalPrice: number;
+  /** When set (e.g. from member/reseller or custom member_discount), used for display and total instead of recalculating */
+  effectiveUnitPriceOverride?: number;
 }
 
 export interface OrderData {

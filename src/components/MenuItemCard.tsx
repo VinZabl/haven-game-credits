@@ -6,7 +6,7 @@ import { useMemberDiscounts } from '../hooks/useMemberDiscounts';
 
 interface MenuItemCardProps {
   item: MenuItem;
-  onAddToCart: (item: MenuItem, quantity?: number, variation?: Variation) => void;
+  onAddToCart: (item: MenuItem, quantity?: number, variation?: Variation, addOns?: import('../types').AddOn[], effectiveUnitPrice?: number) => void;
   quantity: number;
   onUpdateQuantity: (id: string, quantity: number) => void;
   onItemAdded?: () => void; // Callback when item is added to cart
@@ -111,7 +111,10 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   };
 
   const handleItemSelect = (variation?: Variation) => {
-    onAddToCart(item, 1, variation || selectedVariation);
+    const v = variation || selectedVariation;
+    const effectiveVariationPrice = v ? getDiscountedPriceSync(v.price, v.id) : 0;
+    const effectiveUnitPrice = item.basePrice + effectiveVariationPrice;
+    onAddToCart(item, 1, v, undefined, effectiveUnitPrice);
     setShowCustomization(false);
     setSelectedVariation(item.variations?.[0]);
     // Call the callback to redirect to cart after adding item

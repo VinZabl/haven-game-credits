@@ -17,7 +17,7 @@ const preloadImages = (items: MenuItem[]) => {
 
 interface MenuProps {
   menuItems: MenuItem[];
-  addToCart: (item: MenuItem, quantity?: number, variation?: any, addOns?: any[]) => void;
+  addToCart: (item: MenuItem, quantity?: number, variation?: any, addOns?: any[], effectiveUnitPrice?: number) => void;
   cartItems: CartItem[];
   updateQuantity: (id: string, quantity: number) => void;
   selectedCategory: string;

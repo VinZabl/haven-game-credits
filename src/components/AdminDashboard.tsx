@@ -37,7 +37,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
   const [pendingOrders, setPendingOrders] = useState<number>(0);
+  const [lastSeenPendingCount, setLastSeenPendingCount] = useState<number>(0);
   const notificationVolumeRef = useRef<number>(0.5);
+
+  // When user opens Orders view, mark current pending count as "seen" so badge clears until new orders arrive
+  useEffect(() => {
+    if (currentView === 'orders') setLastSeenPendingCount(pendingOrders);
+  }, [currentView, pendingOrders]);
 
   // Fetch admin password from database on mount
   useEffect(() => {
@@ -2310,11 +2316,14 @@ const AdminDashboard: React.FC = () => {
               >
                 <ShoppingBag className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                 <span className="text-xs font-medium text-gray-900">Orders</span>
-                {orderOption === 'place_order' && pendingOrders > 0 && (
-                  <span className="ml-auto flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
-                    {pendingOrders > 99 ? '99+' : pendingOrders}
-                  </span>
-                )}
+                {orderOption === 'place_order' && (() => {
+                  const unread = Math.max(0, pendingOrders - lastSeenPendingCount);
+                  return unread > 0 ? (
+                    <span className="ml-auto flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  ) : null;
+                })()}
               </button>
               <button
                 onClick={() => setCurrentView('settings')}

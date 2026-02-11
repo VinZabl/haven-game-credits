@@ -18,7 +18,7 @@ const SubNav: React.FC<SubNavProps> = ({ selectedCategory, onCategoryClick, sear
 
   return (
     <div className="w-full" style={{ background: 'transparent' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           {/* Search Bar */}
           <div className="flex-1 sm:flex-initial sm:w-64">

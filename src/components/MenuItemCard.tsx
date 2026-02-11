@@ -10,6 +10,8 @@ interface MenuItemCardProps {
   quantity: number;
   onUpdateQuantity: (id: string, quantity: number) => void;
   onItemAdded?: () => void; // Callback when item is added to cart
+  /** 'horizontal' = icon left, text right (Popular); 'vertical' = icon top, text below (other categories) */
+  layout?: 'horizontal' | 'vertical';
 }
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ 
@@ -17,7 +19,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   onAddToCart, 
   quantity, 
   onUpdateQuantity,
-  onItemAdded
+  onItemAdded,
+  layout = 'vertical'
 }) => {
   const [showCustomization, setShowCustomization] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<Variation | undefined>(
@@ -145,81 +148,104 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
     };
   }, [item.name]);
 
+  const discountBadge = item.isOnDiscount && item.discountPercentage != null ? (
+    <span className="absolute top-0 right-0 bg-cafe-primary text-white text-[9px] font-bold px-1 py-0.5 rounded-bl-md">
+      {Math.round(item.discountPercentage * 100)}% OFF
+    </span>
+  ) : null;
+
+  const imageBlock = (imgClass: string, wrapClass: string) => (
+    <div className={`relative overflow-hidden bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg transition-transform duration-300 group-hover:scale-105 ${wrapClass}`}>
+      {item.image ? (
+        <img
+          src={item.image}
+          alt={item.name}
+          className={imgClass}
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+          }}
+        />
+      ) : null}
+      <div className={`absolute inset-0 flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
+        <div className="text-2xl opacity-20 text-gray-400">🎮</div>
+      </div>
+      {discountBadge}
+    </div>
+  );
+
+  const textBlock = (align: 'left' | 'center', noScroll = false) => {
+    const useScroll = !noScroll && shouldScroll;
+    return (
+      <div className={`flex flex-col justify-center min-w-0 p-1 sm:p-1.5 ${noScroll ? 'flex-1 md:p-3' : ''} ${align === 'center' ? 'text-center' : 'text-left'}`}>
+        <h4
+          ref={noScroll ? undefined : nameRef}
+          className={`text-white font-semibold leading-tight ${
+            noScroll ? 'text-[9px] sm:text-[10px] md:text-base line-clamp-1' : 'text-[10px] sm:text-xs line-clamp-2'
+          } ${useScroll ? 'animate-scroll-text' : ''}`}
+          style={useScroll ? { display: 'inline-block' } : {}}
+        >
+          {useScroll ? (
+            <>
+              <span>{item.name}</span>
+              <span className="mx-4">•</span>
+              <span>{item.name}</span>
+            </>
+          ) : (
+            item.name
+          )}
+        </h4>
+        {item.subtitle ? (
+          <p className={`text-[8px] sm:text-[9px] text-cafe-textMuted mt-0.5 truncate leading-tight ${noScroll ? 'md:text-sm' : ''}`}>
+            {item.subtitle}
+          </p>
+        ) : null}
+      </div>
+    );
+  };
+
   return (
     <>
       <div 
         onClick={handleCardClick}
-        className={`relative flex flex-col transition-all duration-300 group rounded-lg overflow-hidden ${!item.available ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`relative flex transition-all duration-300 group rounded-lg overflow-hidden ${layout === 'horizontal' ? 'flex-row' : 'flex-col'} ${!item.available ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
         style={{
-          border: '1px solid rgba(185, 28, 28, 0.3)',
+          border: '1px solid rgba(107, 114, 128, 0.4)',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         }}
         onMouseEnter={(e) => {
           if (item.available) {
-            e.currentTarget.style.borderColor = 'rgba(185, 28, 28, 0.6)';
-            e.currentTarget.style.boxShadow = '0 0 20px rgba(185, 28, 28, 0.4), 0 8px 32px 0 rgba(0, 0, 0, 0.37)';
+            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.7)';
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(107, 114, 128, 0.25), 0 8px 32px 0 rgba(0, 0, 0, 0.37)';
           }
         }}
         onMouseLeave={(e) => {
           if (item.available) {
-            e.currentTarget.style.borderColor = 'rgba(185, 28, 28, 0.3)';
+            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.4)';
             e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
           }
         }}
       >
-        {/* Closed Text Overlay for unavailable items */}
+        {/* Closed overlay for unavailable items */}
         {!item.available && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-t-lg z-10">
+          <div className={`absolute inset-0 bg-black/60 flex items-center justify-center z-10 ${layout === 'horizontal' ? 'rounded-lg' : 'rounded-t-lg'}`}>
             <span className="text-white font-bold text-sm sm:text-base opacity-90 font-sans">Closed</span>
           </div>
         )}
-        
-        {/* Game Icon - compact aspect */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-lg bg-gradient-to-br from-cafe-darkCard to-cafe-darkBg transition-transform duration-300 group-hover:scale-105">
-          {item.image ? (
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-          ) : null}
-          <div className={`absolute inset-0 flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
-            <div className="text-2xl opacity-20 text-gray-400">🎮</div>
-          </div>
-          {/* Game Title + Subtitle Overlay on Icon */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-5 pb-1.5 px-1.5">
-            <h4 
-              ref={nameRef}
-              className={`text-white font-bold text-xs sm:text-sm text-center line-clamp-2 ${
-                shouldScroll ? 'animate-scroll-text' : ''
-              }`}
-              style={shouldScroll ? {
-                display: 'inline-block',
-              } : {}}
-            >
-              {shouldScroll ? (
-                <>
-                  <span>{item.name}</span>
-                  <span className="mx-4">•</span>
-                  <span>{item.name}</span>
-                </>
-              ) : (
-                item.name
-              )}
-            </h4>
-            {item.subtitle ? (
-              <p className="text-[10px] sm:text-xs text-white/80 text-center mt-0.5 truncate px-0.5">
-                {item.subtitle}
-              </p>
-            ) : null}
-          </div>
-        </div>
+
+        {layout === 'horizontal' ? (
+          <>
+            {imageBlock('w-full h-full object-cover', 'w-12 h-12 sm:w-14 sm:h-14 md:w-24 md:h-24 flex-shrink-0 rounded-l-lg')}
+            {textBlock('left', true)}
+          </>
+        ) : (
+          <>
+            {imageBlock('w-full h-full object-cover', 'w-full aspect-[4/3] rounded-t-lg')}
+            {textBlock('center', false)}
+          </>
+        )}
       </div>
 
       {/* Item Selection Modal - Diginix branding */}
@@ -357,7 +383,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
                                   <button
                                     key={variation.id}
                                     onClick={() => handleItemSelect(variation)}
-                                    className="bg-cafe-darkCard border border-cafe-primary/30 rounded-lg p-2.5 text-left group shadow-md relative overflow-hidden transition-all duration-200 hover:border-cafe-primary hover:bg-cafe-primary/10 hover:shadow-[0_0_16px_rgba(185,28,28,0.25)]"
+                                    className="bg-cafe-darkCard border border-cafe-primary/30 rounded-lg p-2.5 text-left group shadow-md relative overflow-hidden transition-all duration-200 hover:border-cafe-primary hover:bg-cafe-primary/10 hover:shadow-[0_0_16px_rgba(107,114,128,0.2)]"
                                     style={{
                                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
                                     }}

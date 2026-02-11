@@ -130,25 +130,19 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
     ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
   }, [siteSettings, selectedCategory]);
 
-  // Helper function to render menu items
-  const renderMenuItems = (items: MenuItem[]) => {
+  // Helper function to render menu items. layout: 'horizontal' for Popular (icon left, text right), 'vertical' for others (icon top, text below).
+  const renderMenuItems = (items: MenuItem[], itemLayout: 'horizontal' | 'vertical' = 'vertical') => {
     const list = Array.isArray(items) ? items : [];
     return list.map((item) => {
       // Find cart items that match this menu item (by extracting menu item id from cart item id)
-      // For simple items without variations/add-ons, sum all matching cart items
       const matchingCartItems = cartItems.filter(cartItem => {
-        // Extract original menu item id (format: "menuItemId:::CART:::timestamp-random" or old format)
         const parts = cartItem.id.split(':::CART:::');
         const originalMenuItemId = parts.length > 1 ? parts[0] : cartItem.id.split('-')[0];
         return originalMenuItemId === item.id && 
                !cartItem.selectedVariation && 
                (!cartItem.selectedAddOns || cartItem.selectedAddOns.length === 0);
       });
-      
-      // Sum quantities of all matching simple items (for items without variations/add-ons)
       const quantity = matchingCartItems.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-      
-      // Get the first matching cart item for updateQuantity (if any)
       const primaryCartItem = matchingCartItems[0];
       
       return (
@@ -158,17 +152,14 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           onAddToCart={addToCart}
           quantity={quantity}
           onUpdateQuantity={(id, qty) => {
-            // If we have a cart item, update it by its cart id
             if (primaryCartItem) {
               updateQuantity(primaryCartItem.id, qty);
-            } else {
-              // Otherwise, treat as adding a new item
-              if (qty > 0) {
-                addToCart(item, qty);
-              }
+            } else if (qty > 0) {
+              addToCart(item, qty);
             }
           }}
           onItemAdded={onItemAdded}
+          layout={itemLayout}
         />
       );
     });
@@ -181,9 +172,9 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-5 pb-4 md:pb-6">
           <section className="mb-6 md:mb-8">
             <div className="flex items-center mb-3 md:mb-4">
-            <h3 className="text-2xl md:text-3xl font-medium text-cafe-text">Search Results</h3>
+            <h3 className="text-lg md:text-xl font-semibold text-cafe-text">Search Results</h3>
             </div>
-            <p className="text-gray-500">No games found matching "{searchQuery}"</p>
+            <p className="text-xs text-cafe-textMuted">No games found matching "{searchQuery}"</p>
           </section>
         </main>
       );
@@ -193,31 +184,30 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-5 pb-4 md:pb-6">
         <section className="mb-16">
           <div className="flex items-center mb-8">
-            <h3 className="text-2xl md:text-3xl font-medium text-cafe-text">
+            <h3 className="text-lg md:text-xl font-semibold text-cafe-text">
               Search Results for "{searchQuery}"
             </h3>
-            <span className="ml-4 text-sm text-gray-500">({menuItemsSafe.length} {menuItemsSafe.length === 1 ? 'game' : 'games'})</span>
+            <span className="ml-3 text-xs text-cafe-textMuted">({menuItemsSafe.length} {menuItemsSafe.length === 1 ? 'game' : 'games'})</span>
           </div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
-            {renderMenuItems(menuItemsSafe)}
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-3">
+            {renderMenuItems(menuItemsSafe, 'vertical')}
           </div>
         </section>
       </main>
     );
   }
 
-  // If showing popular items, display them in a single section
-  // Note: menuItems prop is already filtered by App.tsx when selectedCategory === 'popular'
+  // Popular: text on side of icon (horizontal), 4 per row (desktop)
   if (selectedCategory === 'popular') {
     if (menuItemsSafe.length === 0) {
       return (
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-5 pb-4 md:pb-6">
           <section id="popular" className="mb-6 md:mb-8">
             <div className="flex items-center mb-3 md:mb-4">
-              <h3 className="text-2xl md:text-3xl font-medium text-cafe-text">Popular</h3>
+              <h3 className="text-lg md:text-xl font-semibold text-cafe-text">Popular</h3>
             </div>
-            <p className="text-gray-500">No popular items available at the moment.</p>
+            <p className="text-xs text-cafe-textMuted">No popular items available at the moment.</p>
           </section>
         </main>
       );
@@ -230,27 +220,26 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           <div className="mb-4 md:hidden flex justify-center">
             <div className="glass-card rounded-lg px-3 py-2 inline-block">
               <div className="flex items-center justify-center">
-                <p className="text-sm text-cafe-text">
-                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-2">{currentMember.username}</span>
+                <p className="text-xs text-cafe-text">
+                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-1">{currentMember.username}</span>
                 </p>
               </div>
             </div>
           </div>
         )}
         <section id="popular" className="mb-6 md:mb-8">
-          <div className="flex items-center mb-3 md:mb-4">
-            <h3 className="text-2xl md:text-3xl font-medium text-cafe-text">Popular</h3>
+          <div className="flex items-center mb-2 md:mb-3">
+            <h3 className="text-lg md:text-xl font-semibold text-cafe-text">Popular</h3>
           </div>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
-            {renderMenuItems(menuItemsSafe)}
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            {renderMenuItems(menuItemsSafe, 'horizontal')}
           </div>
         </section>
       </main>
     );
   }
 
-  // Otherwise, display items grouped by category
+  // Otherwise, display items grouped by category (vertical layout: icon top, text below)
   // If viewing "All", also show Popular section at the top (only when not searching)
   const popularItems = menuItemsSafe.filter(item => Boolean(item?.popular) === true);
   const showPopularSection = selectedCategory === 'all' && popularItems.length > 0 && searchQuery.trim() === '';
@@ -264,8 +253,8 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           <div className="mb-4 md:hidden flex justify-center">
             <div className="glass-card rounded-lg px-3 py-2 inline-block">
               <div className="flex items-center justify-center">
-                <p className="text-sm text-cafe-text">
-                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-2">{currentMember.username}</span>
+                <p className="text-xs text-cafe-text">
+                  <span className="text-cafe-textMuted">Welcome back,</span> <span className="font-semibold ml-1">{currentMember.username}</span>
                 </p>
               </div>
             </div>
@@ -277,20 +266,19 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           <Hero images={heroImages} />
         )}
         
-        {/* Show Popular section when viewing "All" */}
+        {/* Show Popular section when viewing "All" – mobile 3 cols, desktop 4 cols */}
         {showPopularSection && (
           <section id="popular" className="mb-8 md:mb-12">
-            <div className="flex items-center mb-3 md:mb-4">
-              <h3 className="text-2xl md:text-3xl font-medium text-cafe-text">Popular</h3>
+            <div className="flex items-center mb-2 md:mb-3">
+              <h3 className="text-lg md:text-xl font-semibold text-cafe-text">Popular</h3>
             </div>
-            
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
-              {renderMenuItems(popularItems)}
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+              {renderMenuItems(popularItems, 'horizontal')}
             </div>
           </section>
         )}
 
-        {/* Regular category sections */}
+        {/* Regular category sections – mobile 4 cols, desktop 6 per row */}
         {(Array.isArray(categories) ? categories : []).map((category) => {
           const categoryItems = menuItemsSafe.filter(item => item.category === category.id);
           
@@ -298,12 +286,12 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           
           return (
             <section key={category.id} id={category.id} className="mb-8 md:mb-12">
-              <div className="flex items-center mb-3 md:mb-4">
-                <h3 className="text-2xl md:text-3xl font-medium text-cafe-text font-sans">{category.name}</h3>
+              <div className="flex items-center mb-2 md:mb-3">
+                <h3 className="text-lg md:text-xl font-semibold text-cafe-text font-sans">{category.name}</h3>
               </div>
               
-              <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
-                {renderMenuItems(categoryItems)}
+              <div className="grid grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
+                {renderMenuItems(categoryItems, 'vertical')}
               </div>
             </section>
           );

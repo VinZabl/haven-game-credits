@@ -27,18 +27,20 @@ const Header: React.FC<HeaderProps> = ({ cartItemsCount, onCartClick, onMenuClic
             onClick={onMenuClick}
             className="text-white hover:opacity-80 transition-colors duration-200 flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial justify-start"
           >
-            <img 
-              src={logoUrl}
-              alt={`${siteSettings?.site_name || 'Trish Devion'} Logo`}
-              className="h-8 sm:h-10 md:h-12 w-auto object-contain flex-shrink-0"
-              onError={(e) => {
-                if (e.currentTarget.src !== '/logo.png') {
-                  e.currentTarget.src = '/logo.png';
-                }
-              }}
-            />
+            <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full overflow-hidden border border-cafe-primary/20 bg-cafe-darkCard/80 flex items-center justify-center">
+              <img 
+                src={logoUrl}
+                alt={`${siteSettings?.site_name || 'Heven Game Credit'} Logo`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  if (e.currentTarget.src !== '/logo.png') {
+                    e.currentTarget.src = '/logo.png';
+                  }
+                }}
+              />
+            </div>
             <span className="text-xs sm:text-sm md:text-base font-bold text-white truncate">
-              {siteSettings?.site_name || 'Trish Devion'}
+              {siteSettings?.site_name || 'Heven Game Credit'}
             </span>
           </button>
 

@@ -19,10 +19,10 @@
 }
 
 .glass-card {
-  background: rgba(10, 10, 10, 0.75);
+  background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(185, 28, 28, 0.3);
+  border: 1px solid rgba(107, 114, 128, 0.4);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
@@ -31,9 +31,9 @@
 }
 
 .glass-hover:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(185, 28, 28, 0.5);
-  box-shadow: 0 8px 32px 0 rgba(185, 28, 28, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(107, 114, 128, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(107, 114, 128, 0.15);
 }
 
 .package-card-hover {
@@ -41,9 +41,9 @@
 }
 
 .package-card-hover:hover {
-  background: #B91C1C !important;
-  border: 2px solid #B91C1C !important;
-  box-shadow: 0 4px 12px 0 rgba(185, 28, 28, 0.4) !important;
+  background: #6B7280 !important;
+  border: 2px solid #6B7280 !important;
+  box-shadow: 0 4px 12px 0 rgba(107, 114, 128, 0.35) !important;
   transform: scale(1.02) !important;
 }
 
@@ -54,22 +54,22 @@
   color: white !important;
 }
 
-/* Trish Devion glow effects */
+/* Heven Game Credit grey glow effects */
 .glow-blue {
-  box-shadow: 0 0 20px rgba(185, 28, 28, 0.5);
+  box-shadow: 0 0 20px rgba(107, 114, 128, 0.4);
 }
 
 .glow-blue-strong {
-  box-shadow: 0 0 30px rgba(185, 28, 28, 0.8);
+  box-shadow: 0 0 30px rgba(107, 114, 128, 0.5);
 }
 
 .text-glow {
-  text-shadow: 0 0 10px rgba(185, 28, 28, 0.8);
+  text-shadow: 0 0 10px rgba(107, 114, 128, 0.6);
 }
 
-/* Legacy cafe color helpers (Trish Devion red) */
+/* Legacy cafe color helpers (Heven Game Credit grey) */
 .bg-cafe-cream {
-  background-color: #1a0a0a;
+  background-color: #0f0f0f;
 }
 
 .bg-cafe-beige {
@@ -77,27 +77,27 @@
 }
 
 .bg-cafe-light {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .text-cafe-accent {
-  color: #B91C1C;
+  color: #6B7280;
 }
 
 .text-cafe-dark {
-  color: #E0F2FE;
+  color: #E5E7EB;
 }
 
 .border-cafe-accent {
-  border-color: #B91C1C;
+  border-color: #6B7280;
 }
 
 .border-cafe-latte {
-  border-color: rgba(185, 28, 28, 0.3);
+  border-color: rgba(107, 114, 128, 0.4);
 }
 
 .ring-cafe-accent {
-  --tw-ring-color: #B91C1C;
+  --tw-ring-color: #6B7280;
 }
 
 /* Hide scrollbar for mobile nav */
@@ -183,13 +183,31 @@ img {
   animation-delay: 4s;
 }
 
-/* Trish Devion: off-black background (solid color only) */
+/* Heven Game Credit: off-black background with logo overlay at 20% */
 .theme-page-bg {
   background-color: #0A0A0A;
   position: relative;
 }
 
-/* Legacy: logo overlay (e.g. login page) */
+.theme-page-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/logo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Optional: logo overlay on other pages (e.g. login) */
 .bg-logo-overlay::before {
   content: '';
   position: fixed;
@@ -200,10 +218,10 @@ img {
   width: 100%;
   height: 100%;
   background-image: url('/logo.png');
-  background-size: contain;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.1;
+  opacity: 0.2;
   pointer-events: none;
   z-index: 0;
 }

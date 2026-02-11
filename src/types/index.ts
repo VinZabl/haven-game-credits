@@ -117,7 +117,7 @@ export type OrderStatus = 'pending' | 'processing' | 'approved' | 'rejected';
 
 export interface Order {
   id: string;
-  invoice_number?: string | null; // Invoice number in format TD1M{day}D{orderNumber} (e.g., TD1M17D1)
+  invoice_number?: string | null; // Invoice number in format HGC{month}M{day}D{orderNumber} (e.g., HGC2M11D1)
   order_items: CartItem[];
   customer_info: Record<string, string> | Array<{ game: string; package: string; fields: Record<string, string> }>; // Single account: { "IGN": "Miki", "Payment Method": "GCash" } | Multiple accounts: [{ game: "MLBB", package: "Package 1", fields: {...} }]
   payment_method_id: string;
@@ -139,7 +139,7 @@ export interface CreateOrderData {
   total_price: number;
   member_id?: string;
   order_option?: 'order_via_messenger' | 'place_order';
-  invoice_number?: string; // Invoice number in format TD1M{day}D{orderNumber}
+  invoice_number?: string; // Invoice number in format HGC{month}M{day}D{orderNumber}
 }
 
 // Member Types

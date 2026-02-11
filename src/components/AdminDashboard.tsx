@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, Edit, Trash2, Save, X, ArrowLeft, TrendingUp, Package, Users, Lock, FolderOpen, CreditCard, Settings, ArrowUpDown, ChevronDown, ChevronUp, ShoppingBag, CheckCircle, Star, Activity, FilePlus, List, FolderTree, Wallet, Cog, Trophy, DollarSign, Clock, Gamepad2, Copy } from 'lucide-react';
 import { MenuItem, Variation, CustomField } from '../types';
 import { useMenu } from '../hooks/useMenu';
 import { useCategories } from '../hooks/useCategories';
+import { useOrders } from '../hooks/useOrders';
 import ImageUpload from './ImageUpload';
 import CategoryManager from './CategoryManager';
 import PaymentMethodManager from './PaymentMethodManager';
@@ -15,6 +16,7 @@ import { useSiteSettings } from '../hooks/useSiteSettings';
 const AdminDashboard: React.FC = () => {
   const { siteSettings } = useSiteSettings();
   const orderOption = siteSettings?.order_option || 'order_via_messenger';
+  const { orders, fetchOrders } = useOrders(); // Subscription + polling: orders list and badge update
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('beracah_admin_auth') === 'true';
@@ -36,14 +38,48 @@ const AdminDashboard: React.FC = () => {
       localStorage.setItem('beracah_admin_currentView', view);
     }
   };
-  const [pendingOrders, setPendingOrders] = useState<number>(0);
+
+  const pendingOrders = useMemo(
+    () => orders.filter((o) => o.status === 'pending' && (o.order_option ?? 'place_order') === 'place_order').length,
+    [orders]
+  );
   const [lastSeenPendingCount, setLastSeenPendingCount] = useState<number>(0);
   const notificationVolumeRef = useRef<number>(0.5);
+  const prevPendingCountRef = useRef<number>(0);
+  const hasInitializedPendingRef = useRef<boolean>(false);
 
-  // When user opens Orders view, mark current pending count as "seen" so badge clears until new orders arrive
+  // When user opens Orders view, mark current pending count as "seen"
   useEffect(() => {
     if (currentView === 'orders') setLastSeenPendingCount(pendingOrders);
   }, [currentView, pendingOrders]);
+
+  // Refetch orders when dashboard is visible and place_order is on, so badge/count are correct even if Realtime is delayed
+  useEffect(() => {
+    if (orderOption !== 'place_order') return;
+    if (currentView !== 'dashboard' && currentView !== 'orders') return;
+    fetchOrders(100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchOrders is stable enough; avoid refetch on every render
+  }, [orderOption, currentView]);
+
+  // Play notification sound only when pending count increases after initial load (new order via realtime)
+  useEffect(() => {
+    if (orderOption !== 'place_order') return;
+    if (!hasInitializedPendingRef.current) {
+      hasInitializedPendingRef.current = true;
+      prevPendingCountRef.current = pendingOrders;
+      return;
+    }
+    if (pendingOrders > prevPendingCountRef.current) {
+      try {
+        const audio = new Audio('/notifSound.mp3');
+        audio.volume = Math.min(1, Math.max(0, notificationVolumeRef.current));
+        audio.play().catch(() => {});
+      } catch {
+        // ignore
+      }
+    }
+    prevPendingCountRef.current = pendingOrders;
+  }, [orderOption, pendingOrders]);
 
   // Fetch admin password from database on mount
   useEffect(() => {
@@ -87,75 +123,6 @@ const AdminDashboard: React.FC = () => {
     fetchVolume();
   }, []);
 
-  // Pending orders count: initial fetch + Supabase Realtime (no polling – efficient on egress)
-  // Play notification sound when a new pending order arrives (works from any admin page)
-  useEffect(() => {
-    if (orderOption !== 'place_order') {
-      setPendingOrders(0);
-      return;
-    }
-
-    const isPlaceOrderPending = (row: { status?: string; order_option?: string | null }) =>
-      row.status === 'pending' && (row.order_option ?? 'place_order') === 'place_order';
-
-    const playNewOrderSound = () => {
-      try {
-        const audio = new Audio('/notifSound.mp3');
-        audio.volume = notificationVolumeRef.current;
-        audio.play().catch((err) => console.error('Error playing notification sound:', err));
-      } catch (err) {
-        console.error('Error creating audio element:', err);
-      }
-    };
-
-    const fetchPendingCount = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('id, order_option')
-          .eq('status', 'pending');
-
-        if (error) throw error;
-        const count = (data ?? []).filter((o) => (o.order_option ?? 'place_order') === 'place_order').length;
-        setPendingOrders(count);
-      } catch (err) {
-        console.error('Error fetching pending orders count:', err);
-      }
-    };
-
-    fetchPendingCount();
-
-    const channel = supabase
-      .channel('admin-pending-orders')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as { status?: string; order_option?: string | null };
-            if (isPlaceOrderPending(row)) {
-              setPendingOrders((n) => n + 1);
-              playNewOrderSound();
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            const oldRow = payload.old as { status?: string; order_option?: string | null };
-            const newRow = payload.new as { status?: string; order_option?: string | null };
-            const wasPending = isPlaceOrderPending(oldRow);
-            const isPending = isPlaceOrderPending(newRow);
-            if (wasPending && !isPending) setPendingOrders((n) => Math.max(0, n - 1));
-            else if (!wasPending && isPending) setPendingOrders((n) => n + 1);
-          } else if (payload.eventType === 'DELETE') {
-            const row = payload.old as { status?: string; order_option?: string | null };
-            if (isPlaceOrderPending(row)) setPendingOrders((n) => Math.max(0, n - 1));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [orderOption]);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);

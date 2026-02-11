@@ -419,19 +419,19 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
     const day = String(philippineTime.getDate()).padStart(2, '0');
     return {
       dateString: `${year}-${month}-${day}`, // YYYY-MM-DD
-      dayOfMonth: philippineTime.getDate()
+      dayOfMonth: philippineTime.getDate(),
+      monthOfYear: philippineTime.getMonth() + 1 // 1-12
     };
   };
 
-  // Generate invoice number (format: {orderNumber}M{day}D{orderNumber})
-  // Example: 1M17D1 = 1st order on the 17th day of the month
-  //          1M17D2 = 2nd order on the 17th day of the month
+  // Generate invoice number (format: HGC{month}M{day}D{orderNumber})
+  // Example: HGC2M11D1 = 1st order on Feb 11, HGC2M11D2 = 2nd order on Feb 11
   // Resets daily at 12:00 AM Philippine time (Asia/Manila, UTC+8)
   // The invoice number increments each time "Copy Order Message" is clicked (forceNew = true)
   // Subsequent calls (like "Order via Messenger") will reuse the same invoice number (forceNew = false)
   // Uses database (site_settings) to track invoice count with proper locking to prevent race conditions
   const generateInvoiceNumber = async (forceNew: boolean = false): Promise<string> => {
-    const { dateString: todayStr, dayOfMonth } = getPhilippineDate();
+    const { dateString: todayStr, dayOfMonth, monthOfYear } = getPhilippineDate();
     
     // Check if we already generated an invoice number for today and forceNew is false
     // If forceNew is false, reuse the existing number from state
@@ -527,10 +527,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
 
       const orderNumber = currentCount;
 
-      // Format: TD1M{day}D{orderNumber}
-      // Example: TD1M17D1 (1st order on day 17), TD1M17D2 (2nd order on day 17), etc.
-      // The first number is always 1, the last number is the order number
-      const invoiceNumber = `TD1M${dayOfMonth}D${orderNumber}`;
+      // Format: HGC{month}M{day}D{orderNumber} (e.g. HGC2M11D1 for Feb 11, 1st order)
+      const invoiceNumber = `HGC${monthOfYear}M${dayOfMonth}D${orderNumber}`;
       
       // Store the generated invoice number and date
       setGeneratedInvoiceNumber(invoiceNumber);
@@ -539,9 +537,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
       return invoiceNumber;
     } catch (error) {
       console.error('Error generating invoice number:', error);
-      // Fallback to a simple format if there's an error
-      const { dayOfMonth } = getPhilippineDate();
-      return `TD1M${dayOfMonth}D1`;
+      // Fallback if there's an error
+      const { dayOfMonth, monthOfYear } = getPhilippineDate();
+      return `HGC${monthOfYear}M${dayOfMonth}D1`;
     }
   };
 
@@ -743,13 +741,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
     
     // Total
     lines.push(`TOTAL: ₱${totalPrice}`);
-    lines.push(''); // Break before payment receipt
-    
-    // Payment Receipt
-    lines.push('PAYMENT RECEIPT:');
-    if (receiptImageUrl) {
-      lines.push(receiptImageUrl);
-    }
     
     return lines.join('\n');
   };
@@ -1057,13 +1048,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
     
     // Total
     lines.push(`TOTAL: ₱${totalPrice}`);
-    lines.push(''); // Break before payment receipt
-    
-    // Payment Receipt
-    lines.push('PAYMENT RECEIPT:');
-    if (receiptImageUrl) {
-      lines.push(receiptImageUrl);
-    }
     
     return lines.join('\n');
   };
@@ -1314,7 +1298,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, getEffectiveUnitPrice, t
     // If no invoice number exists yet, it will generate one, but ideally Copy should be clicked first
     const orderDetails = await generateOrderMessage(false);
     const encodedMessage = encodeURIComponent(orderDetails);
-    const messengerUrl = `https://m.me/trishdiscountedgamecredits?text=${encodedMessage}`;
+    const messengerUrl = `https://m.me/hevengamecredit?text=${encodedMessage}`;
     
     window.open(messengerUrl, '_blank');
     

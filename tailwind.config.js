@@ -5,20 +5,20 @@ export default {
     extend: {
       colors: {
         cafe: {
-          // Trish Devion theme: red accents, off-black background
-          accent: '#B91C1C',
-          accent2: '#DC2626',
+          // Heven Game Credit theme: grey accents, off-black background
+          accent: '#6B7280',
+          accent2: '#9CA3AF',
           dark: '#0A0A0A',
           cream: '#F5F5F5',
           beige: '#E5E5E5',
           latte: '#D5D5D5',
-          espresso: '#DC2626',
+          espresso: '#9CA3AF',
           light: '#141414',
-          primary: '#B91C1C',   // Crimson red accent
-          secondary: '#DC2626', // Brighter red for gradients/hover
-          darkBg: '#0A0A0A',    // Off-black main background
-          darkCard: '#141414',  // Slightly lighter card background
-          glass: 'rgba(185, 28, 28, 0.1)',
+          primary: '#6B7280',   // Grey accent
+          secondary: '#9CA3AF', // Lighter grey for gradients/hover
+          darkBg: '#0A0A0A',   // Off-black main background
+          darkCard: '#141414', // Slightly lighter card background
+          glass: 'rgba(107, 114, 128, 0.15)',
           text: '#FFFFFF',
           textMuted: '#B0B0B0'
         }

@@ -144,10 +144,12 @@ export const useOrders = () => {
     }
   };
 
-  // Subscribe to order changes via Supabase Realtime (no polling – efficient on egress)
-  // Only when order_option is 'place_order'; when order_via_messenger, no subscription
+  // Subscribe to order changes via Supabase Realtime + polling fallback when order_option is 'place_order'
   useEffect(() => {
     if (orderOption !== 'place_order') return;
+
+    // Initial fetch so dashboard badge/count and list are correct without opening Orders tab
+    fetchOrders(100);
 
     const channel = supabase
       .channel('orders-realtime')
@@ -158,27 +160,36 @@ export const useOrders = () => {
           schema: 'public',
           table: 'orders',
         },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
+        (payload: { eventType?: string; event?: string; new?: Order; old?: { id: string } }) => {
+          const eventType = payload.eventType ?? payload.event;
+          if (eventType === 'INSERT') {
             const newOrder = payload.new as Order;
+            if (!newOrder?.id) return;
             setOrders(prev => {
               if (prev.some(order => order.id === newOrder.id)) return prev;
               return [newOrder, ...prev].slice(0, 100);
             });
-          } else if (payload.eventType === 'UPDATE') {
+          } else if (eventType === 'UPDATE') {
             const updatedOrder = payload.new as Order;
+            if (!updatedOrder?.id) return;
             setOrders(prev => prev.map(order =>
               order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order
             ));
-          } else if (payload.eventType === 'DELETE') {
-            setOrders(prev => prev.filter(order => order.id !== (payload.old as { id: string }).id));
+          } else if (eventType === 'DELETE') {
+            const oldId = payload.old?.id;
+            if (!oldId) return;
+            setOrders(prev => prev.filter(order => order.id !== oldId));
           }
         }
       )
       .subscribe();
 
+    // Fallback: refetch every 20s so badge and list update even if Realtime doesn't deliver
+    const pollInterval = setInterval(() => fetchOrders(100), 20000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, [orderOption]);
 

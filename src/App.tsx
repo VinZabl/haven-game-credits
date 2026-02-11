@@ -13,7 +13,7 @@ import WelcomeModal from './components/WelcomeModal';
 import MemberProfile from './components/MemberProfile';
 import OrderStatusModal from './components/OrderStatusModal';
 import { useMenu } from './hooks/useMenu';
-import { useMemberAuth } from './hooks/useMemberAuth';
+import { useMemberAuth, MemberAuthProvider } from './context/MemberAuthContext';
 import { useOrders } from './hooks/useOrders';
 import Footer from './components/Footer';
 
@@ -379,11 +379,13 @@ function MainApp() {
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/member/login" element={<MainApp />} />
-      </Routes>
+      <MemberAuthProvider>
+        <Routes>
+          <Route path="/" element={<MainApp />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/member/login" element={<MainApp />} />
+        </Routes>
+      </MemberAuthProvider>
     </Router>
   );
 }

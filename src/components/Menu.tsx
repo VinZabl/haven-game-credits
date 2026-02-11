@@ -198,7 +198,7 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
     );
   }
 
-  // Popular: text on side of icon (horizontal), 4 per row (desktop)
+  // Popular: same format as rest of game items (vertical: icon top, text below; 4 cols mobile, 6 desktop)
   if (selectedCategory === 'popular') {
     if (menuItemsSafe.length === 0) {
       return (
@@ -231,8 +231,8 @@ const Menu: React.FC<MenuProps> = ({ menuItems, addToCart, cartItems, updateQuan
           <div className="flex items-center mb-2 md:mb-3">
             <h3 className="text-lg md:text-xl font-semibold text-cafe-text">Popular</h3>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-            {renderMenuItems(menuItemsSafe, 'horizontal')}
+          <div className="grid grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 md:gap-3">
+            {renderMenuItems(menuItemsSafe, 'vertical')}
           </div>
         </section>
       </main>

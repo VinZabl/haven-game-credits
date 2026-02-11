@@ -182,8 +182,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
       <div className={`flex flex-col justify-center min-w-0 p-1 sm:p-1.5 ${noScroll ? 'flex-1 md:p-3' : ''} ${align === 'center' ? 'text-center' : 'text-left'}`}>
         <h4
           ref={noScroll ? undefined : nameRef}
-          className={`text-white font-semibold leading-tight ${
-            noScroll ? 'text-[9px] sm:text-[10px] md:text-base line-clamp-1' : 'text-[10px] sm:text-xs line-clamp-2'
+          className={`text-white font-semibold leading-tight break-words ${
+            noScroll ? 'text-[9px] sm:text-[10px] md:text-base line-clamp-2' : 'text-[10px] sm:text-xs line-clamp-2'
           } ${useScroll ? 'animate-scroll-text' : ''}`}
           style={useScroll ? { display: 'inline-block' } : {}}
         >
@@ -198,7 +198,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
           )}
         </h4>
         {item.subtitle ? (
-          <p className={`text-[8px] sm:text-[9px] text-cafe-textMuted mt-0.5 truncate leading-tight ${noScroll ? 'md:text-sm' : ''}`}>
+          <p className={`text-[8px] sm:text-[9px] text-cafe-textMuted mt-0.5 leading-tight line-clamp-2 break-words ${noScroll ? 'md:text-sm' : ''}`}>
             {item.subtitle}
           </p>
         ) : null}
